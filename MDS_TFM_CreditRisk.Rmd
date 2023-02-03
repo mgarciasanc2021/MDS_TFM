@@ -1,30 +1,127 @@
 ---
-title: "MDS_TFM_CreditRisk"
+title: "URJC MDS TFM - Financial Credit Risk"
 author: "Miguel García Sánchez"
 date: "`r Sys.Date()`"
-output: pdf_document
+output:
+ html_document:
+  code_folding: hide
+  toc: yes
+  toc_float: TRUE
+  toc_depth: 3 
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+# 1. Introducción 
 
-## R Markdown
+El trabajo a desarrollar consiste en el análisis de un dataset relativo a datos de préstamos de entidades financieras, donde se quiere tratar de comprender cuales son las razones y características que llevan al llamado "default", así como modelos que pueden ayudar a predecirlo.
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+## 1.1. Desarrollo, programación y control de versiones
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+Se ha elegido para el desarrollo de una parte del trabajo el lenguaje de programación R (R version 4.2.2), cómo IDE de desarrollo RStudio (RStudio version 2022.12.0.353) y cómo herramienta de control de versiones GitHub (proyecto "/MDS_TFM" creado y vinculado al usuario Miguel_gs - "mgarciasanc2021"). 
 
-```{r cars}
-summary(cars)
+**Link del proyecto en GitHub:** 
+https://github.com/mgarciasanc2021/MDS_TFM
+
+## 1.2. Paquetes R
+
+```{r librerias, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+library(formatR)
+library(readr)
+library(ggplot2)
+library(GGally)
+library(dplyr)
+library(tidyr)
+library(missForest)
+library(VIM)
+library(formattable)
+library(usmap)
+library(cowplot)
+library(corrplot)
+library(MASS)
+library(ggfortify)
+library(nortest)
+library(car)
+library(lmtest)
+library(PerformanceAnalytics)
+library(Amelia)
+library(ggthemes)
+library(tidyverse)
+library(tibble)
+library(gridExtra)
+#library(ggbiplot)
+library(factoextra)
+library(caret)
+library(ISLR)
+library(rpart)
+library(rpart.plot)
+library(rattle)
+library(tsne)
+library(Rtsne)
+library(class)
+library(ada)
+library(factoextra)
+library(cluster)
+library(useful)
+library(mgcv)
+library(xgboost)
+library(randomForest)
+library(kernlab)
+library(pROC)
+#library(doMC)
+library(ggpubr)
+library(ROCR)
+
 ```
 
-## Including Plots
+# 2. Conjunto de datos
 
-You can also embed plots, for example:
+El conjunto de datos elegido para el desarrollo del trabajo es "Credit Risk Dataset". Este dataset incluye información de clientes y préstamos contratados por estos en diferentes instituciones financiera.
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+**Link del data set:** <https://www.kaggle.com/datasets/laotse/credit-risk-dataset>.
+
+## 2.1. Carga de los datos
+
+El conjunto de datos "Credit Risk Dataset" contiene 12 columnas y 32.581 filas y lo obtenemos en formato .CSV. 
+
+Inicialmente se han guardado los datos en un data frame llamado "fin_credrisk" y se ha realizado un estudio inicial sobre su contenido utilizando la función head y summary.
+
+```{r cargas datos, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fin_credrisk<- read_csv("financial_credit_risk.csv")
+head(fin_credrisk)
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+summary(fin_credrisk)
+
+```
+
+## 2.2. Definición de las variables
+
+Empezando ya el análisis inicial del conjunto de datos que tenemos, vemos que las 12 variables que componen los datos pueden ser descritas como:
+
+**Input variables o Variables de entrada/predictoras:**
+
+* **person_age:** Edad de la persona que toma el crédito.
+* **person_income:** Ingresos anuales en dólares de la persona que toma el crédito.
+* **person_home_ownership:** Estado de la propiedad de la vivienda donde reside la persona que toma el crédito.
+* **person_emp_length:** Periodo de tiempo en años desde que la persona que toma el crédito esta en situación laboral activa.
+* **loan_intent:** Uso del crédito concedido.
+* **loan_grade:** Calidad crediticia del crédito concedido.
+* **loan_amnt:** Cantidad en dólares de crédito concedido.
+* **loan_int_rate:** Tipo de interés en porcentaje del crédito concedido. 
+* **loan_percent_income:** Porcentaje de lo que supone el préstamo sobre los ingresos anuales en dólares de la persona que toma el crédito.
+* **cb_person_default_on_file:** Variable binaria que indica si la persona tomadora del crédito ha tenido antes una situación de impago o no.
+* **cb_preson_cred_hist_length:** Duración en años del historial crediticio de la persona tomadora del crédito.
+
+**Output variable o Variable de salida/respuesta/objetivo:**
+
+* **loan_status:** Estado actual del crédito (suponiendo "1" como impagado o situación de default, y "0" no impagado)
+
+## 2.3. Objetivo del análisis
+
+El objetivo final del proyecto es conseguir llegar a un modelo que permita predecir el riesgo de impago o "default" que puede tener en cartera una institución financiera y saber si estamos ante créditos que van a poder ser devueltos por el cliente, o por si el contrario se van a quedar como impagados.
+
+
