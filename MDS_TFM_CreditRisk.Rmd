@@ -193,8 +193,7 @@ fcr_train %>% keep(is.numeric) %>%  gather() %>% ggplot(aes(value,fill=key)) +fa
 
 ```
 
-```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
-fcr_train %>% keep(is.character) %>%  gather() %>% ggplot(aes(value,fill=key)) +facet_wrap(~ key, scales = "free") + geom_histogram(bins=sqrt(nrow(fcr_train)))+ theme(legend.position="none")
 
-```
+
+
 
