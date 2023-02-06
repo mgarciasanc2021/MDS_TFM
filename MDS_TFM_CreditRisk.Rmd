@@ -124,4 +124,77 @@ Empezando ya el análisis inicial del conjunto de datos que tenemos, vemos que l
 
 El objetivo final del proyecto es conseguir llegar a un modelo que permita predecir el riesgo de impago o "default" que puede tener en cartera una institución financiera y saber si estamos ante créditos que van a poder ser devueltos por el cliente, o por si el contrario se van a quedar como impagados.
 
+# 3. Limpieza inicial del conjunto de datos
+
+## 3.1. Cambio de nombres y de tipo de variable de las columnas
+
+Se ha decidido no realizar un cambio en el nombre de las variables que aparecen en las columnas de los datos, ya que ya se sigue un patrón de nombre sin espaciones y así no tendremos problemas con ello a futuro.
+
+También se ha decidido de momento no realizar ningún cambio en el tipo de variable (tenemos variables numéricas y categóricas en el dataset). Cabría la posibilidad de tratar de transformar la variable "loan_status"en categórica en función de si estamos ante préstamos de crédito impagados ("default") o no.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+str(fin_credrisk)
+
+```
+
+# 4. Análisis de datos faltantes
+
+Haciendo uso de la librería VIM y de la librería Amelia, analizamos la estructura que tienen los datos faltantes dentro de nuestro data set para ver y entender como se distribuyen y a que variables afecta. 
+
+Se puede comprobar que la proporción de datos faltantes es de aproximadamente un 1%. Hay 895 observaciones con datos faltantes en la variable "person_emp_length" y 3.116 observaciones con datos faltantes en "loan_int_rate".
+
+```{r dfdos, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+summary(aggr(fin_credrisk,numbers=T,sortVar=T))
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+missmap(fin_credrisk, main="Missing Map")
+
+```
+
+# 5. Partición del conjunto de datos: data set training y data set test
+
+Una vez vistos por encima la estructura general de los datos, pasamos a dividir el conjunto de datos en dos para diferenciar los que usaremos de entrenamiento de los que usaremos de test (viendo la cantidad de datos de la que disponemos, la distribución elegida ha sido: 20% test y 80% training). Establecemos una semilla que nos guarde de forma permanente la división que hacemos para que la distribución de los datos sea siempre la misma.
+
+Guardamos además la partición de datos de test para ser utilizada a futuro para la validación del modelo final y pasamos a trabajar de aquí en adelante con la partición de training.
+
+```{r p, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+set.seed(101)
+sample <- sample.int(n=nrow(fin_credrisk), size=floor(.80*nrow(fin_credrisk)), replace = F)
+fcr_train <- fin_credrisk[sample,]
+fcr_test <- fin_credrisk[-sample,]
+fcr_train
+fcr_test
+
+```
+
+# 6. Detección, tratamiento e imputación de datos faltantes
+
+Para la imputación de datos faltantes en las columnas "person_emp_length" y "loan_int_rate", se ha decidido reemplazar todos sus NAs según los valores medianos de las mismas variables a las que se referencian.
+
+Con la función summary se comprueba que ya no hay más datos faltantes en el data set train.
+
+```{r imputacion, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train$person_emp_length[is.na(fcr_train$person_emp_length)]<-median(fcr_train$person_emp_length,na.rm = TRUE)
+fcr_train$loan_int_rate[is.na(fcr_train$loan_int_rate)]<-median(fcr_train$loan_int_rate,na.rm = TRUE)
+summary(fcr_train)
+
+```
+
+# 7. EDA - Análisis exploratorio de datos
+
+## 7.1. Análisis de la distribución de las variables
+
+Analizamos como se distribuyen las diferentes variables de nuestro dataset.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train %>% keep(is.numeric) %>%  gather() %>% ggplot(aes(value,fill=key)) +facet_wrap(~ key, scales = "free") + geom_histogram(bins=sqrt(nrow(fcr_train)))+ theme(legend.position="none")
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train %>% keep(is.character) %>%  gather() %>% ggplot(aes(value,fill=key)) +facet_wrap(~ key, scales = "free") + geom_histogram(bins=sqrt(nrow(fcr_train)))+ theme(legend.position="none")
+
+```
 
