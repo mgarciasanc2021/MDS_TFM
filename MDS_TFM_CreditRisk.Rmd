@@ -126,16 +126,44 @@ El objetivo final del proyecto es conseguir llegar a un modelo que permita prede
 
 # 3. Limpieza inicial del conjunto de datos
 
-## 3.1. Cambio de nombres y de tipo de variable de las columnas
+## 3.1. Cambio de nombres de las columnas
 
 Se ha decidido no realizar un cambio en el nombre de las variables que aparecen en las columnas de los datos, ya que ya se sigue un patrón de nombre sin espaciones y así no tendremos problemas con ello a futuro.
 
-También se ha decidido de momento no realizar ningún cambio en el tipo de variable (tenemos variables numéricas y categóricas en el dataset). Cabría la posibilidad de tratar de transformar la variable "loan_status"en categórica en función de si estamos ante préstamos de crédito impagados ("default") o no.
+## 3.2. Cambio de tipo de variable de las columnas
+
+Vemos que en el dataset tenemos variables de tipo numéricas (num - col_double()) y de tipo texto o cadena de caractéres (chr - col_character()).
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 str(fin_credrisk)
 
 ```
+
+Se ha decidido por ello realizar cambio en el tipo de variable de las que son cadena de caracter y pasarlas a variables categóricas.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fin_credrisk$person_home_ownership = as.factor(gsub("\\$",
+    "", fin_credrisk$person_home_ownership))
+
+fin_credrisk$loan_intent = as.factor(gsub("\\$",
+    "", fin_credrisk$loan_intent))
+
+fin_credrisk$loan_grade = as.factor(gsub("\\$",
+    "", fin_credrisk$loan_grade))
+
+fin_credrisk$cb_person_default_on_file = as.factor(gsub("\\$",
+    "", fin_credrisk$cb_person_default_on_file))
+
+```
+
+Vemos que con el cambio tenemos en el dataset variables de tipo numéricas y categóricas
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+str(fin_credrisk)
+
+```
+
+Cabría la posibilidad de tratar de transformar la variable "loan_status"en categórica en función de si estamos ante préstamos de crédito impagados ("default") o no.
 
 # 4. Análisis de datos faltantes
 
@@ -189,10 +217,14 @@ summary(fcr_train)
 Analizamos como se distribuyen las diferentes variables de nuestro dataset.
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
-fcr_train %>% keep(is.numeric) %>%  gather() %>% ggplot(aes(value,fill=key)) +facet_wrap(~ key, scales = "free") + geom_histogram(bins=sqrt(nrow(fcr_train)))+ theme(legend.position="none")
+fcr_train %>% keep(is.numeric) %>% gather() %>% ggplot(aes(value,fill=key)) +facet_wrap(~ key, scales = "free") + geom_histogram(bins=sqrt(nrow(fcr_train)))+ theme(legend.position="none")
 
 ```
 
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train %>% keep(is.factor) %>% gather() %>% ggplot(aes(value,fill=key)) +facet_wrap(~ key, scales = "free") + geom_histogram(bins=sqrt(nrow(fcr_train)),stat="count")+ theme(legend.position="none")
+
+```
 
 
 
