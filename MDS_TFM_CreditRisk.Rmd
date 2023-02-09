@@ -257,6 +257,7 @@ Guardamos además la partición de datos de test para ser utilizada a futuro par
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 set.seed(101)
+
 sample <- sample.int(n=nrow(fin_credrisk), size=floor(.80*nrow(fin_credrisk)), replace = F)
 fcr_train <- fin_credrisk[sample,]
 fcr_test <- fin_credrisk[-sample,]
