@@ -12,6 +12,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
 ```
 # 1. Introducción 
 
@@ -90,6 +91,7 @@ Inicialmente se han guardado los datos en un data frame llamado "fin_credrisk" y
 ```{r cargas datos, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 fin_credrisk<- read_csv("financial_credit_risk.csv")
 head(fin_credrisk)
+count(fin_credrisk)
 
 ```
 
@@ -97,6 +99,13 @@ head(fin_credrisk)
 summary(fin_credrisk)
 
 ```
+
+Sacando estos datos vemos algunas cosas importantes a comentar:
+
+* La variable "person_age" tiene un valor máximo de 144 años.
+* La variable "person_emp_length" tiene un valor máximo de 123 años.
+* La variable "person_emp_length" tiene 895 registros con NAs.
+* La variable "loan_interest_rate" tiene 3.116 registros con NAs.
 
 ## 2.2. Definición de las variables
 
@@ -165,13 +174,20 @@ str(fin_credrisk)
 
 Cabría la posibilidad de tratar de transformar la variable "loan_status"en categórica en función de si estamos ante préstamos de crédito impagados ("default") o no.
 
-# 4. Análisis de datos faltantes
+# 4. Análisis preliminar del conjunto de datos
+
+## 4.1. Análisis de datos faltantes
+
+Analizamos en mayor profundidad lo detectado anteriomente respecto a datos faltantes en el dataset:
+
+* La variable "person_emp_length" tiene 895 registros con NAs.
+* La variable "loan_interest_rate" tiene 3.116 registros con NAs.
 
 Haciendo uso de la librería VIM y de la librería Amelia, analizamos la estructura que tienen los datos faltantes dentro de nuestro data set para ver y entender como se distribuyen y a que variables afecta. 
 
 Se puede comprobar que la proporción de datos faltantes es de aproximadamente un 1%. Hay 895 observaciones con datos faltantes en la variable "person_emp_length" y 3.116 observaciones con datos faltantes en "loan_int_rate".
 
-```{r dfdos, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 summary(aggr(fin_credrisk,numbers=T,sortVar=T))
 
 ```
@@ -181,13 +197,65 @@ missmap(fin_credrisk, main="Missing Map")
 
 ```
 
+### 4.1.2. Tratamiento e imputación de datos faltantes
+
+Para la imputación de datos faltantes en las columnas "person_emp_length" y "loan_int_rate", se ha decidido reemplazar todos sus NAs según los valores medianos de las mismas variables a las que se referencian.
+
+Con la función summary se comprueba que ya no hay más datos faltantes en el data set train.
+
+```{r imputacion, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fin_credrisk$person_emp_length[is.na(fin_credrisk$person_emp_length)]<-median(fin_credrisk$person_emp_length,na.rm = TRUE)
+fin_credrisk$loan_int_rate[is.na(fin_credrisk$loan_int_rate)]<-median(fin_credrisk$loan_int_rate,na.rm = TRUE)
+
+summary(fin_credrisk)
+
+```
+
+## 4.2. Análisis de datos atípico o outliers
+
+Analizamos en mayor profundidad lo detectado anteriomente respecto a datos atípico en el dataset:
+
+* La variable "person_age" tiene un valor máximo de 144 años.
+* La variable "person_emp_length" tiene un valor máximo de 123 años.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+plot(fin_credrisk$person_age, fin_credrisk$person_emp_length)
+
+```
+
+Vemos como hay algunos datos que si podemos considerar atípico. Hay dos registros con un historial laboral de la persona contratante del préstamo ("person_emp_length") de más de 120 años y 4 registros con una edad de la persona contratante del préstamo ("person_age") superior a 120 años. 
+
+### 4.2.2. Tratamiento y eliminación de datos atípicos o outliers
+
+Estos caso comentados son raros e ilógicos, y optamos finalmente por eliminarlos del dataset.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fin_credrisk <- fin_credrisk %>%
+   filter(person_age < 120) %>%
+   filter(person_emp_length < 120)
+
+```
+
+
+Mostramos el resultado de como queda ahora el dataset con esta modificación. Ya no tenemos ni atípico ni datos faltantes en el dataset. Ahora el dateset mantiene las 12 columnas, pero pasamos a tener 32.574 filas o registros.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+summary(fin_credrisk)
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+count(fin_credrisk)
+
+```
+
 # 5. Partición del conjunto de datos: data set training y data set test
 
 Una vez vistos por encima la estructura general de los datos, pasamos a dividir el conjunto de datos en dos para diferenciar los que usaremos de entrenamiento de los que usaremos de test (viendo la cantidad de datos de la que disponemos, la distribución elegida ha sido: 20% test y 80% training). Establecemos una semilla que nos guarde de forma permanente la división que hacemos para que la distribución de los datos sea siempre la misma.
 
 Guardamos además la partición de datos de test para ser utilizada a futuro para la validación del modelo final y pasamos a trabajar de aquí en adelante con la partición de training.
 
-```{r p, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 set.seed(101)
 sample <- sample.int(n=nrow(fin_credrisk), size=floor(.80*nrow(fin_credrisk)), replace = F)
 fcr_train <- fin_credrisk[sample,]
@@ -197,22 +265,9 @@ fcr_test
 
 ```
 
-# 6. Detección, tratamiento e imputación de datos faltantes
+# 6. EDA - Análisis exploratorio de datos
 
-Para la imputación de datos faltantes en las columnas "person_emp_length" y "loan_int_rate", se ha decidido reemplazar todos sus NAs según los valores medianos de las mismas variables a las que se referencian.
-
-Con la función summary se comprueba que ya no hay más datos faltantes en el data set train.
-
-```{r imputacion, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
-fcr_train$person_emp_length[is.na(fcr_train$person_emp_length)]<-median(fcr_train$person_emp_length,na.rm = TRUE)
-fcr_train$loan_int_rate[is.na(fcr_train$loan_int_rate)]<-median(fcr_train$loan_int_rate,na.rm = TRUE)
-summary(fcr_train)
-
-```
-
-# 7. EDA - Análisis exploratorio de datos
-
-## 7.1. Análisis de la distribución de las variables
+## 6.1. Análisis de la distribución de las variables
 
 Analizamos como se distribuyen las diferentes variables de nuestro dataset.
 
