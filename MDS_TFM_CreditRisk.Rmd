@@ -275,7 +275,7 @@ fcr_test
 
 ## 6.1. Análisis de la distribución de las variables
 
-Analizamos como se distribuyen las diferentes variables de nuestro dataset:
+Analizamos como se distribuyen las diferentes variables de entrada de nuestro dataset:
 
 * **Variables numéricas relativas a la persona**
 
@@ -300,6 +300,33 @@ grid.arrange(ga, gb, gd, gl)
 
 ```
 
+Modificamos a logaritmos
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train <- fcr_train %>%
+    mutate(Log_person_age = log(person_age), Log_person_income = log(person_income),
+        Log_person_emp_length = log(person_emp_length), Log_cb_person_cred_hist_length = log(cb_person_cred_hist_length))
+
+ga <- fcr_train %>%
+    ggplot(aes(x = Log_person_age)) + geom_histogram(bins = 20,
+    fill = "#619CFF")
+
+gb <- fcr_train %>%
+    ggplot(aes(x = Log_person_income)) + geom_histogram(bins = 20,
+    fill = "#E58700") + theme(axis.text.x = element_text(angle = 10, hjust = 0.5, vjust = 0.5))
+
+gd <- fcr_train %>%
+    ggplot(aes(x = Log_person_emp_length)) + geom_histogram(bins = 20,
+    fill = "#FD61D1")
+
+gl <- fcr_train %>%
+    ggplot(aes(x = Log_cb_person_cred_hist_length)) + geom_histogram(bins = 20,
+    fill = "#CDAD00")
+
+grid.arrange(ga, gb, gd, gl)
+
+```
+
 * **Variables numéricas relativas al préstamo**
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
@@ -311,15 +338,11 @@ gh <- fcr_train %>%
     ggplot(aes(x = loan_int_rate)) + geom_histogram(bins = 20,
     fill = "#00008B")
 
-gi <- fcr_train %>%
-    ggplot(aes(x = loan_status)) + geom_histogram(bins = 20,
-    fill = "#98F5FF")
-
 gj <- fcr_train %>%
     ggplot(aes(x = loan_percent_income)) + geom_histogram(bins = 20,
     fill = "#7FFF00")
 
-grid.arrange(gg, gh, gi, gj)
+grid.arrange(gg, gh, gj)
 
 ```
 
@@ -353,7 +376,19 @@ grid.arrange(ge, gf)
 
 ```
 
+Analizamos como se distribuyen la variable objetivo de nuestro dataset:
 
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+ggplot(data = fcr_train) + geom_bar(mapping = aes(x = loan_status, fill = as.factor(loan_status))) +
+    labs(title = "Histograma del estado del crédito")
 
+```
 
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+table(fcr_train$loan_status)
 
+```
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+prop.table(table(fcr_train$loan_status))
+
+```
