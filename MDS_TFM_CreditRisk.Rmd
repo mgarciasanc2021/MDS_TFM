@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 # 1. Introducción 
 
-El trabajo a desarrollar consiste en el análisis de un dataset relativo a datos de préstamos de entidades financieras, donde se quiere tratar de comprender cuales son las razones y características que llevan al llamado "default", así como modelos que pueden ayudar a predecirlo.
+El trabajo a desarrollar consiste en el análisis de un dataset relativo a datos de préstamos de entidades financieras, donde se quiere tratar de comprender cuales son las razones y características que llevan al llamado "default" o situación de impago, así como modelos que pueden ayudar a predecirlo.
 
 ## 1.1. Desarrollo, programación y control de versiones
 
@@ -281,7 +281,7 @@ Analizamos como se distribuyen las diferentes variables de entrada de nuestro da
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 ga <- fcr_train %>%
-    ggplot(aes(x = person_age)) + geom_histogram(bins = 20,
+    ggplot(aes(x = person_age)) + geom_histogram(bins =20,
     fill = "#619CFF")
 
 gb <- fcr_train %>%
@@ -300,7 +300,7 @@ grid.arrange(ga, gb, gd, gl)
 
 ```
 
-Modificamos a logaritmos
+- Modificamos a logaritmos??
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 fcr_train <- fcr_train %>%
@@ -340,6 +340,29 @@ gh <- fcr_train %>%
 
 gj <- fcr_train %>%
     ggplot(aes(x = loan_percent_income)) + geom_histogram(bins = 20,
+    fill = "#7FFF00")
+
+grid.arrange(gg, gh, gj)
+
+```
+
+- Modificamos a logaritmos??
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train <- fcr_train %>%
+    mutate(Log_loan_amnt = log(loan_amnt), Log_loan_int_rate = log(loan_int_rate),
+        Log_loan_percent_income = log(loan_percent_income))
+
+gg <- fcr_train %>%
+    ggplot(aes(x = Log_loan_amnt)) + geom_histogram(bins = 20,
+    fill = "#8B2323")
+
+gh <- fcr_train %>%
+    ggplot(aes(x = Log_loan_int_rate)) + geom_histogram(bins = 20,
+    fill = "#00008B")
+
+gj <- fcr_train %>%
+    ggplot(aes(x = Log_loan_percent_income)) + geom_histogram(bins = 20,
     fill = "#7FFF00")
 
 grid.arrange(gg, gh, gj)
@@ -392,3 +415,78 @@ table(fcr_train$loan_status)
 prop.table(table(fcr_train$loan_status))
 
 ```
+
+## 6.2. Boxplot - análisis de la variables de relevancia y de los atípicos observados
+
+(LOGARITMOS??)
+
+Analizamos si nuestras variables tienen valores atípicos, cuales son sus valores medios y vemos sus intervalos de confianza, a través de gráficos de tipo Boxplot.
+
+* **Boxplot variable person_age**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+BoxPlot_person_age <- ggplot(fcr_train, aes(x = factor(loan_status), y = person_age)) +
+    geom_boxplot() + geom_boxplot(fill = "#619CFF") + ggtitle("Boxplot person_age")
+BoxPlot_person_age
+
+```
+
+* **Boxplot variable person_income**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+BoxPlot_person_income <- ggplot(fcr_train, aes(x = factor(loan_status), y = person_income)) +
+    geom_boxplot() + geom_boxplot(fill = "#E58700") + ggtitle("Boxplot person_income")
+BoxPlot_person_income
+
+```
+
+* **Boxplot variable person_emp_length**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+BoxPlot_person_emp_length <- ggplot(fcr_train, aes(x = factor(loan_status), y = person_emp_length)) +
+    geom_boxplot() + geom_boxplot(fill = "#FD61D1") + ggtitle("Boxplot person_emp_length")
+BoxPlot_person_emp_length
+
+```
+
+* **Boxplot variable cb_person_cred_hist_length**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+BoxPlot_cb_person_cred_hist_length <- ggplot(fcr_train, aes(x = factor(loan_status), y = cb_person_cred_hist_length)) + geom_boxplot() + geom_boxplot(fill = "#CDAD00") + ggtitle("Boxplot cb_person_cred_hist_length")
+BoxPlot_cb_person_cred_hist_length
+
+```
+
+* **Boxplot variable loan_amnt**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+BoxPlot_loan_amnt <- ggplot(fcr_train, aes(x = factor(loan_status), y = loan_amnt)) +
+    geom_boxplot() + geom_boxplot(fill = "#8B2323") + ggtitle("Boxplot loan_amnt")
+BoxPlot_loan_amnt
+
+```
+
+* **Boxplot variable loan_int_rate**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+BoxPlot_loan_int_rate <- ggplot(fcr_train, aes(x = factor(loan_status), y = loan_int_rate)) +
+    geom_boxplot() + geom_boxplot(fill = "#00008B") + ggtitle("Boxplot loan_int_rate")
+BoxPlot_loan_int_rate
+
+```
+
+* **Boxplot variable loan_percent_income**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+BoxPlot_loan_percent_income <- ggplot(fcr_train, aes(x = factor(loan_status), y = loan_percent_income)) +
+    geom_boxplot() + geom_boxplot(fill = "#7FFF00") + ggtitle("Boxplot loan_percent_income")
+BoxPlot_loan_percent_income
+
+```
+
+
+
+
+
+
+
