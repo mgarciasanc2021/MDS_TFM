@@ -116,7 +116,7 @@ Empezando ya el análisis inicial del conjunto de datos que tenemos, vemos que l
 * **person_age:** Edad de la persona que toma el crédito.
 * **person_income:** Ingresos anuales en dólares de la persona que toma el crédito.
 * **person_home_ownership:** Estado de la propiedad de la vivienda donde reside la persona que toma el crédito.
-* **person_emp_length:** Periodo de tiempo en años desde que la persona que toma el crédito esta en situación laboral activa.
+* **person_emp_length:** Periodo de tiempo en años desde que la persona que toma el crédito está en situación laboral activa.
 * **loan_intent:** Uso del crédito concedido.
 * **loan_grade:** Calidad crediticia del crédito concedido.
 * **loan_amnt:** Cantidad en dólares de crédito concedido.
@@ -201,7 +201,7 @@ missmap(fin_credrisk, main="Missing Map")
 
 Para la imputación de datos faltantes en las columnas "person_emp_length" y "loan_int_rate", se ha decidido reemplazar todos sus NAs según los valores medianos de las mismas variables a las que se referencian.
 
-Con la función summary se comprueba que ya no hay más datos faltantes en el data set train.
+Con la función summary se comprueba que ya no hay más datos faltantes en el data set.
 
 ```{r imputacion, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 fin_credrisk$person_emp_length[is.na(fin_credrisk$person_emp_length)]<-median(fin_credrisk$person_emp_length,na.rm = TRUE)
@@ -277,6 +277,15 @@ fcr_test
 
 Analizamos como se distribuyen las diferentes variables de entrada de nuestro dataset:
 
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train %>%
+    keep(is.numeric) %>%
+    gather() %>%
+    ggplot(aes(value, fill = key)) + facet_wrap(~key, scales = "free") +
+    geom_histogram(bins = sqrt(nrow(fcr_train))) + theme(legend.position = "none")
+
+```
+
 * **Variables numéricas relativas a la persona**
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
@@ -303,27 +312,27 @@ grid.arrange(ga, gb, gd, gl)
 - Modificamos a logaritmos??
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
-fcr_train <- fcr_train %>%
-    mutate(Log_person_age = log(person_age), Log_person_income = log(person_income),
-        Log_person_emp_length = log(person_emp_length), Log_cb_person_cred_hist_length = log(cb_person_cred_hist_length))
+#fcr_train <- fcr_train %>%
+ #   mutate(Log_person_age = log(person_age), Log_person_income = log(person_income),
+  #      Log_person_emp_length = log(person_emp_length), Log_cb_person_cred_hist_length = #log(cb_person_cred_hist_length))
 
-ga <- fcr_train %>%
-    ggplot(aes(x = Log_person_age)) + geom_histogram(bins = 20,
-    fill = "#619CFF")
+#ga <- fcr_train %>%
+    #ggplot(aes(x = Log_person_age)) + geom_histogram(bins = 20,
+    #fill = "#619CFF")
 
-gb <- fcr_train %>%
-    ggplot(aes(x = Log_person_income)) + geom_histogram(bins = 20,
-    fill = "#E58700") + theme(axis.text.x = element_text(angle = 10, hjust = 0.5, vjust = 0.5))
+#gb <- fcr_train %>%
+    #ggplot(aes(x = Log_person_income)) + geom_histogram(bins = 20,
+    #fill = "#E58700") + theme(axis.text.x = element_text(angle = 10, hjust = 0.5, vjust = 0.5))
 
-gd <- fcr_train %>%
-    ggplot(aes(x = Log_person_emp_length)) + geom_histogram(bins = 20,
-    fill = "#FD61D1")
+#gd <- fcr_train %>%
+    #ggplot(aes(x = Log_person_emp_length)) + geom_histogram(bins = 20,
+    #fill = "#FD61D1")
 
-gl <- fcr_train %>%
-    ggplot(aes(x = Log_cb_person_cred_hist_length)) + geom_histogram(bins = 20,
-    fill = "#CDAD00")
+#gl <- fcr_train %>%
+    #ggplot(aes(x = Log_cb_person_cred_hist_length)) + geom_histogram(bins = 20,
+    #fill = "#CDAD00")
 
-grid.arrange(ga, gb, gd, gl)
+#grid.arrange(ga, gb, gd, gl)
 
 ```
 
@@ -349,23 +358,23 @@ grid.arrange(gg, gh, gj)
 - Modificamos a logaritmos??
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
-fcr_train <- fcr_train %>%
-    mutate(Log_loan_amnt = log(loan_amnt), Log_loan_int_rate = log(loan_int_rate),
-        Log_loan_percent_income = log(loan_percent_income))
+#fcr_train <- fcr_train %>%
+    #mutate(Log_loan_amnt = log(loan_amnt), Log_loan_int_rate = log(loan_int_rate),
+       #Log_loan_percent_income = log(loan_percent_income))
 
-gg <- fcr_train %>%
-    ggplot(aes(x = Log_loan_amnt)) + geom_histogram(bins = 20,
-    fill = "#8B2323")
+#gg <- fcr_train %>%
+    #ggplot(aes(x = Log_loan_amnt)) + geom_histogram(bins = 20,
+    #fill = "#8B2323")
 
-gh <- fcr_train %>%
-    ggplot(aes(x = Log_loan_int_rate)) + geom_histogram(bins = 20,
-    fill = "#00008B")
+#gh <- fcr_train %>%
+    #ggplot(aes(x = Log_loan_int_rate)) + geom_histogram(bins = 20,
+    #fill = "#00008B")
 
-gj <- fcr_train %>%
-    ggplot(aes(x = Log_loan_percent_income)) + geom_histogram(bins = 20,
-    fill = "#7FFF00")
+#gj <- fcr_train %>%
+    #ggplot(aes(x = Log_loan_percent_income)) + geom_histogram(bins = 20,
+    #fill = "#7FFF00")
 
-grid.arrange(gg, gh, gj)
+#grid.arrange(gg, gh, gj)
 
 ```
 
@@ -416,6 +425,8 @@ prop.table(table(fcr_train$loan_status))
 
 ```
 
+El 78.15% de los registros en nuestro dataset de train (20.365 registros) tiene valor 0 correspondiente a créditos que no han entrado en default, y el 21.85% (5.694 registros) tienen valor 1 correspondiente a créditos que por el contrario si han sido impagados.
+
 ## 6.2. Boxplot - análisis de la variables de relevancia y de los atípicos observados
 
 (LOGARITMOS??)
@@ -431,6 +442,8 @@ BoxPlot_person_age
 
 ```
 
+Se aprecia como la variable "person_age" relativa a la edad del contratante del préstamo se mantiene bastante igual en los casos donde hay default o no hay default.
+
 * **Boxplot variable person_income**
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
@@ -439,6 +452,8 @@ BoxPlot_person_income <- ggplot(fcr_train, aes(x = factor(loan_status), y = pers
 BoxPlot_person_income
 
 ```
+
+Se aprecia ligeramente como la variable "person_income" relativa a los ingresos anuales del contratante del préstamo, es inferior en media en los casos donde se da el impago del crédito.
 
 * **Boxplot variable person_emp_length**
 
@@ -449,6 +464,8 @@ BoxPlot_person_emp_length
 
 ```
 
+Se aprecia ligeramente como la variable "person_emp_length" relativa al periodo de tiempo en años desde que la persona que toma el crédito está en situación laboral activa, es inferior en media en los casos donde se da el impago del crédito.
+
 * **Boxplot variable cb_person_cred_hist_length**
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
@@ -456,6 +473,8 @@ BoxPlot_cb_person_cred_hist_length <- ggplot(fcr_train, aes(x = factor(loan_stat
 BoxPlot_cb_person_cred_hist_length
 
 ```
+
+Se aprecia como la variable "person_cred_hist_length" relativa a la duración en años del historial crediticio de la persona tomadora del crédito, se mantiene bastante igual en los casos donde hay default o no hay default.
 
 * **Boxplot variable loan_amnt**
 
@@ -466,6 +485,8 @@ BoxPlot_loan_amnt
 
 ```
 
+Se aprecia como la variable "loan_amount" relativa a la cantidad en dólares de crédito concedido, es superior en media en los casos donde se da el impago del crédito.
+
 * **Boxplot variable loan_int_rate**
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
@@ -474,6 +495,8 @@ BoxPlot_loan_int_rate <- ggplot(fcr_train, aes(x = factor(loan_status), y = loan
 BoxPlot_loan_int_rate
 
 ```
+
+Se aprecia como la variable "loan_int_rate" relativa al tipo de interés en porcentaje del crédito concedido, es superior en media en los casos donde se da el impago del crédito.
 
 * **Boxplot variable loan_percent_income**
 
@@ -484,8 +507,134 @@ BoxPlot_loan_percent_income
 
 ```
 
+Se aprecia como la variable "loan_percent_income" relativa al porcentaje de lo que supone el préstamo sobre los ingresos anuales en dólares de la persona que toma el crédito, es superior en media en los casos donde se da el impago del crédito.
 
 
+Como conclusión lógica de todo esto, normalmente el la situación de impago es más frecuente en personas con ingresos más bajos, menor número de años de actividad laboral y con préstamos de cantidades más altas y con tipos de interés elevados.
+
+## 6.3. Correlación entre variables
+
+Continuando con en análisis de las distintas variables del data set y el estudio de como se relacionan entre si, queremos ver de forma global como se correlacionan las variables numéricas que nos pueden llegar a servir para el modelo de predicción.
+
+### 6.3.1. Análisis de la correlación global del conjunto de variables
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+corrplot(cor(fcr_train %>%
+    mutate(loan_status = as.numeric(loan_status)) %>%
+    keep(is.numeric)))
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+res <- cor(fcr_train %>%
+    mutate(loan_status = as.numeric(loan_status)) %>%
+    keep(is.numeric))
+round(res, 2)
+
+```
+
+Vemos que las variables que más estan correlacionadas con la variable “loan_status” son: “person_income”, “loan_amnt”, “loan_int_rate” y “loan_percent_income”.
+
+### 6.3.2. Análisis de la correlación bivariante
+
+Realizamos un análisis bivariante para ver que variables están más correlacionadas, positva o negativamente, entre si.
+
+* **Correlación: person_age y cb_person_cred_hist_length:**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+cor(x = fcr_train$person_age, y = fcr_train$cb_person_cred_hist_length)
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train %>%
+    ggplot(aes(person_age, cb_person_cred_hist_length)) + geom_point(alpha = 0.2,
+    colour = "green") + geom_smooth(formula = "y ~ x", method = "lm") +
+    labs(title = "Relación entre las variables person_age y cb_person_cred_hist_length",
+        x = "person_age", y = "cb_person_cred_hist_length")
+
+```
+
+* **Correlación: loan_amnt y person_income:**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+cor(x = fcr_train$loan_amnt, y = fcr_train$person_income)
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train %>%
+    ggplot(aes(loan_amnt, person_income)) + geom_point(alpha = 0.2,
+    colour = "green") + geom_smooth(formula = "y ~ x", method = "lm") +
+    labs(title = "Relación entre las variables loan_amnt y person_income",
+        x = "loan_amnt", y = "person_income")
+
+```
+
+* **Correlación: loan_percent_income y person_income:**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+cor(x = fcr_train$loan_percent_income, y = fcr_train$person_income)
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train %>%
+    ggplot(aes(loan_percent_income, person_income)) + geom_point(alpha = 0.2,
+    colour = "green") + geom_smooth(formula = "y ~ x", method = "lm") +
+    labs(title = "Relación entre las variables loan_percent_income y person_income",
+        x = "loan_percent_income", y = "person_income")
+
+```
+
+* **Correlación: loan_percent_income y loan_amnt:**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+cor(x = fcr_train$loan_percent_income, y = fcr_train$loan_amnt)
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train %>%
+    ggplot(aes(loan_percent_income, loan_amnt)) + geom_point(alpha = 0.2,
+    colour = "green") + geom_smooth(formula = "y ~ x", method = "lm") +
+    labs(title = "Relación entre las variables loan_percent_income y loan_amnt",
+        x = "loan_percent_income", y = "loan_amnt")
+
+```
+
+* **Correlación: loan_status y loan_int_rate:**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+cor(x = fcr_train$loan_status, y = fcr_train$loan_int_rate)
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train %>%
+    ggplot(aes(loan_status, loan_int_rate)) + geom_point(alpha = 0.2,
+    colour = "green") + geom_smooth(formula = "y ~ x", method = "lm") +
+    labs(title = "Relación entre las variables loan_status y loan_int_rate",
+        x = "loan_status", y = "loan_int_rate")
+
+```
+
+* **Correlación: loan_status y loan_percent_income:**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+cor(x = fcr_train$loan_status, y = fcr_train$loan_percent_income)
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train %>%
+    ggplot(aes(loan_status, loan_percent_income)) + geom_point(alpha = 0.2,
+    colour = "green") + geom_smooth(formula = "y ~ x", method = "lm") +
+    labs(title = "Relación entre las variables loan_status y loan_percent_income",
+        x = "loan_status", y = "loan_percent_income")
+
+```
+
+## 6.4. Análisis de las variables categóricas
 
 
 
