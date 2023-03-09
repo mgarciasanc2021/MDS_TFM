@@ -73,6 +73,7 @@ library(pROC)
 #library(doMC)
 library(ggpubr)
 library(ROCR)
+#library(ggextra)
 
 ```
 
@@ -635,6 +636,146 @@ fcr_train %>%
 ```
 
 ## 6.4. Análisis de las variables categóricas
+
+Se realiza un análisis de las variables categóricas en relación con el resto de variables numéricas del dataset. Se trata de entender las características personales de la gente y su actividad creditica para tratar de sacar un cierto análisis preliminar.
+
+* **Variable person_home_ownership en función de las variables person_age y person_income:**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+plot1 <- ggplot(fcr_train, aes(person_age, person_income, col=person_home_ownership)) +
+  geom_point() + ylab("Income") + xlab("Age") + labs(color = "Home ownership: ") +
+  theme(legend.position="bottom") 
+
+ggExtra::ggMarginal(plot1, type = "boxplot")
+
+```
+
+En base a este gráfico podemos sacar como conclusión que: existe un sesgo en la edad (el dateset tiene más registros de gente joven), existe un sesgo en los ingresos (el dataset no tiene bien balanceada la variable "person_income", estando está desequilibrada y siendo más frecuente los ingresos bajos) y parece que la gente con hipoteca tiene por lo general más ingresos que la gente que vive de alquiler.
+
+* **Variable loan_intent en función de las variables loan_amnt y loan_int_rate:**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+plot2 <- ggplot(fcr_train, aes(loan_amnt, loan_int_rate, col=loan_intent)) +
+  geom_point() + ylab("Interest rate") + xlab("Loan Amount") + labs(color = "Loan Intent: ") +
+  theme(legend.position="bottom")
+
+ggExtra::ggMarginal(plot2, type = "boxplot")
+
+```
+
+Este segundo gráfico obtenido, representa la relación entre el importe del préstamo solicitado y el tipo de interés aplicado. Aquí podemos ver que no hay una correlación clara entre las dos variables, por lo que podemos decir que no dependen la una de la otra. Además, parece que la intención de préstamo se distribuye por igual en la muestra, lo que significa que la intención no influye en absoluto en los tipos de interés ni en el importe del préstamo. En este caso, las distribuciones son gaussianas normales con un ligero sesgo.
+
+* **Variable loan_grade en función de las variables loan_amnt y person_income:**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+plot3 <- ggplot(fcr_train, aes(loan_amnt, person_income, col=loan_grade)) +
+  geom_point() + ylab("Income") + labs(color = "Loan Grade: ") + theme(legend.position="bottom") +
+  scale_color_manual(values=c("#66cc99", "#70F000", "#D0FF00", "#F3FF0F", "#FFDB4D", "#FFA64D", "#FF4D4D"))
+
+ggExtra::ggMarginal(plot3, type = "boxplot")
+
+```
+
+En este tercer gráfico obtenido, tampoco existe una relación clara entre los ingresos y el importe del préstamo. Al añadir diferentes colores para las calificaciones de los préstamos, observamos una pequeña tendencia a que las personas con ingresos bajos y con un préstamo elevado tengan una calificación más baja. Pero no se aprecia una relación clara.
+
+* **Variable loan_grade en función de las variables person_age y loan_int_rate:**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+plot4 <- ggplot(fcr_train, aes(person_age, loan_int_rate, col=loan_grade)) +
+  geom_point() + ylab("Interest rate") + xlab("Age") +  labs(color = "Loan Grade: ") +
+theme(legend.position="bottom") + scale_color_manual(values=c("#66cc99", "#70F000", "#D0FF00", "#F3FF0F", "#FFDB4D", "#FFA64D", "#FF4D4D"))
+
+ggExtra::ggMarginal(plot4, type = "boxplot")
+
+```
+
+En este cuarto gráfico se muestra la relación entre la edad, el tipo de interés y el grado del préstamo. Aquí podemos ver claramente que la calificación del préstamo depende del tipo de interés, que divide el gráfico en varias secciones. Básicamente dice que cuanto más alto es el tipo de interés, mayor es el riesgo percibido. Esto podría deberse al método de evaluación del grado de riesgo de las personas. Además, observamos que las personas mayores tienden a tener tipos de interés más bajos por término medio que los jóvenes.
+
+## 6.5. Análisis de la variable de interés
+
+Ahora se pasa a analizar nuestra variable de interes "loan_status", para ver la probabilidad de impago de un crédito o préstamo dadas ciertas características en el cliente o en el propio préstamos.
+
+* **Variable loan_status en función de las variables loan_percent_income y loan_int_rate:**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+plot5 <- ggplot(fcr_train, aes(loan_percent_income, loan_int_rate, col= factor(loan_status, labels = c("Not default", "Default")))) +
+  geom_point() + ylab("Interest rate") + xlab("Loan percent income") + labs(color = "Loan Status: ") + 
+  theme(legend.position="bottom") + scale_color_manual(values=c("#66cc99", "#ff3366"))
+
+ggExtra::ggMarginal(plot5, type = "boxplot")
+
+```
+
+En este gráfico se vuelve a considerar el nivel de los tipos de interés, en relación con la proporción entre el importe del préstamo y los ingresos. La forma de los puntos sugiere que no hay una relación clara entre estas dos variables, lo que significa que los tipos de interés no dependen en absoluto del porcentaje de ingresos del préstamo. Sin embargo, cuanto más nos acercamos a un ratio más alto, más bajos son los tipos de interés.
+
+Si analizamos a las personas que han impagado (en rojo) y a las personas que no han impagado (en verde), podemos ver claramente niveles de umbral hacia el 12% para los tipos de interés, y 0,3 para la variable de ingresos porcentuales del préstamo. Esta zona podría considerarse menos arriesgada tanto para los prestamistas como para los prestatarios. Esto parece razonable, ya que unos tipos de interés más altos y una mayor relación ingresos/préstamo significa que es menos probable que la gente reembolse su deuda.Es decir, a mayor nivel de tipo de interés del préstamos y un mayor nivel de endeudamiento en relación a los ingresos, es más probable que un cliente de una entidad bancaria termine por impagar su deuda.
+
+* **Variable loan_status en función de la variable person_home_ownership:**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+ggplot(fcr_train, aes(x = factor(loan_status), fill = factor(person_home_ownership))) +
+  geom_bar(position = "fill") +
+  ylab("Home ownership %") + xlab("Default") + labs(fill = "Type of ownership:") +
+  theme(legend.position="top", plot.background = element_rect(colour = "black", size = 1)) + 
+  guides(fill = guide_legend(reverse=TRUE)) +
+  coord_flip()
+
+```
+
+Con este gráfico se muestran las frecuencias absolutas del tipo de propiedad de la vivienda con respecto a las personas que han incurrido en impago del crédito. Se puede observar que típicamente quien paga un alquiler es más propenso al impago considerando todas las demás clases.
+
+* **Variable loan_status en función de la variable loan_intent:**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+ggplot(fcr_train, aes(x = factor(loan_status), fill = factor(loan_intent))) +
+  geom_bar(position = "fill") +
+  ylab("Loan Intent") + xlab("Credit Default") + labs(fill = "Loan intent:") +
+  theme(legend.position="top", plot.background = element_rect(colour = "black", size = 1)) + 
+  guides(fill = guide_legend(reverse=TRUE)) +
+  coord_flip()
+
+```
+
+Con este gráfico se pasa a comparar a las personas que han incumplido con el pago del préstamo y las que no, con la finalidad del préstamo solicitado. Como hemos señalado antes, la variable de la finalidad del préstamo está bien distribuida, sin embargo, cuando el préstamo se dedica a la consolidación de deudas y con fines médicos, parece más probable que se produzca un impago de la deuda.
+
+* **Variable loan_status en función de la variable loan_grade:**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+ggplot(fcr_train, aes(x = factor(loan_status), fill = factor(loan_grade))) +
+  geom_bar(position = "fill") + scale_fill_manual(values=c("#66cc99", "#70F000", "#D0FF00", "#F3FF0F", "#FFDB4D", "#FFA64D", "#FF4D4D")) +
+  ylab("Loan Grade") + xlab("Credit Default") + labs(fill = "Loan grade:") +
+  theme(legend.position="top", plot.background = element_rect(colour = "black", size = 1)) + 
+  guides(fill = guide_legend(reverse=TRUE)) +
+  coord_flip()
+
+```
+
+Utilizando de nuevo la paleta de colores para el grado de riesgo, es posible observar que esta variable tiene cierto poder predictivo de los impagos de los tomadores de crédito. Según los datos, cuando el grado de riesgo es más bajo (calificación crediticia "A"), es menos probable que se produzca un impago. Lo contrario ocurre con los grados inferiores ("D", "E", "F" y "G")..
+
+* **Variable loan_status en función de las variables loan_int_rate, person_income y loan_amnt:**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+g1 <- ggplot(fcr_train, aes(x = factor(loan_status), y = loan_int_rate)) + 
+  geom_boxplot(fill = "orange", alpha = 0.2) +
+  ylab("Interest rate") + xlab("Credit Default") +
+  coord_flip() 
+
+g2 <- ggplot(fcr_train, aes(x = factor(loan_status), y = person_income)) + 
+  geom_boxplot(fill = "orange", alpha = 0.2) +
+  ylab("Income") + xlab("Credit Default") +
+  coord_flip() 
+
+g3 <- ggplot(fcr_train, aes(x = factor(loan_status), y = loan_amnt)) + 
+  geom_boxplot(fill = "orange", alpha = 0.2) +
+  ylab("Loan Amount") + xlab("Credit Default") +
+  coord_flip() 
+
+
+grid.arrange(g1, g2, g3, ncol = 1, nrow = 3, top = "Default vs Interest rate, Income and Loan amount")
+
+```
+
+En este último gráfico se compara el riesgo de crédito con tres variables continuas: los tipos de interés, los ingresos anuales y el importe del préstamo. Este gráfico es interesante porque muestra claramente que unos tipos de interés más altos, unos ingresos más bajos y un crédito más elevado aumentan la posibilidad de impago.
 
 
 
