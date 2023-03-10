@@ -14,6 +14,9 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 
 ```
+
+# *INICIO DEL DESARROLLO DEL TRABAJO*
+
 # 1. Introducción 
 
 El trabajo a desarrollar consiste en el análisis de un dataset relativo a datos de préstamos de entidades financieras, donde se quiere tratar de comprender cuales son las razones y características que llevan al llamado "default" o situación de impago, así como modelos que pueden ayudar a predecirlo.
@@ -133,6 +136,8 @@ Empezando ya el análisis inicial del conjunto de datos que tenemos, vemos que l
 ## 2.3. Objetivo del análisis
 
 El objetivo final del proyecto es conseguir llegar a un modelo que permita predecir el riesgo de impago o "default" que puede tener en cartera una institución financiera y saber si estamos ante créditos que van a poder ser devueltos por el cliente, o por si el contrario se van a quedar como impagados.
+
+# *ANÁLISIS INICIAL, LIMPIEZA Y PARTICIONADO DE LOS DATOS*
 
 # 3. Limpieza inicial del conjunto de datos
 
@@ -271,6 +276,8 @@ fcr_train
 fcr_test
 
 ```
+
+# *ANÁLISIS EN PROFUNDIDAD DE LOS DATOS*
 
 # 6. EDA - Análisis exploratorio de datos
 
@@ -777,6 +784,8 @@ grid.arrange(g1, g2, g3, ncol = 1, nrow = 3, top = "Default vs Interest rate, In
 
 En este último gráfico se compara el riesgo de crédito con tres variables continuas: los tipos de interés, los ingresos anuales y el importe del préstamo. Este gráfico es interesante porque muestra claramente que unos tipos de interés más altos, unos ingresos más bajos y un crédito más elevado aumentan la posibilidad de impago.
 
+# *APLICACIÓN DE LAS TÉCNICAS Y MODELOS DE MACHINE LEARNING*
 
+# 7. Técnicas de reducción de la dimensionalidad
 
 
