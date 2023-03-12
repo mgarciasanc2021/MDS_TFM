@@ -1099,7 +1099,7 @@ confusionMatrix(caret.glm)
 
 ```
 
-Evaluación del rendimiento predictivo del modelo GLM presentado con las datos de train (metrica de evaluación utilizada de referencia: “Accuracy” y punto de corte utilizado: 0.5):
+Evaluación del rendimiento predictivo del modelo Decision Tree presentado con las datos de train (metrica de evaluación utilizada de referencia: “Accuracy”, "Recall", "Precision", "F1" y "ROC", y punto de corte utilizado: 0.5):
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 fcr_train_glm$y_pred_probs2 <- predict(caret.glm, fcr_train_glm, type = "prob")
@@ -1147,7 +1147,7 @@ precision_modelo_glm2_tune
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 # result
-F1Score_modelo_glm2_tune <- ((2 * precision_modelo_glm2_tune * recall_modelo_glm2_tune) / (precision_modelo_glm2_tune + recall_modelo_glm2_tune)) %>%
+F1Score_modelo_glm2_tune <- (2*(precision_modelo_glm2_tune * recall_modelo_glm2_tune) / (precision_modelo_glm2_tune + recall_modelo_glm2_tune)) %>%
     round(4)
 F1Score_modelo_glm2_tune
 
@@ -1167,25 +1167,393 @@ auc(roc_glm)
 
 Se obtiene alrededor de un 87% de área bajo la curva.
 
+El ROC es una curva que se genera trazando la tasa de verdaderos positivos (TPR) frente a la tasa de falsos positivos (FPR) en varios umbrales, mientras que el AUC es el área bajo la curva ROC. Dicho de otro modo, el ROC traza el porcentaje de verdaderos positivos predichos con exactitud por el modelo a medida que el umbral de probabilidad de predicción se reduce de 1 a 0. Muestra la compensación entre la tasa a la que se puede predecir correctamente algo con la tasa de predecir incorrectamente algo.
+
+Por lo tanto, para un buen modelo, la curva debería aumentar de forma pronunciada, indicando que el TPR (eje Y) aumenta más rápido que el FPR (eje X) a medida que disminuye la puntuación de corte. Cuanto mayor sea el área bajo la curva ROC, mejor será la capacidad predictiva del modelo. Esa métrica oscila entre 0,50 y 1,00, y los valores superiores a 0,80 indican que el modelo hace un buen trabajo al discriminar entre las dos categorías que componen nuestra variable objetivo.
+
 ## 7.2. DECISION TREE
 
+Primero se crean unos datos de train específicos para ser usados en el desarrollo del modelo de árbol de decisión, y así mantener los originales sin modificar.
 
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train_tree <- fcr_train
+fcr_train_tree
 
+```
 
+Se crea un modelo de árbol de decisión inicial básico y sin podar utilizando las 11 variables predictoras que tenemos a nuestra disposición y utilizando el método de “Gini” como medida de la impureza:
 
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# árbol de clasificación con las opciones por defecto (cp = 0.0001 y split = "gini") con el comando:
+tree = rpart(as.factor(loan_status) ~ ., data = fcr_train_tree, cp=0.0001)
+rpart.plot(tree, nn = TRUE, extra = 104,  box.palette = "GnBu", branch.lty = 3, shadow.col = "gray")
 
+```
 
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+tree
 
+```
 
+Analizamos los resultados obtenidos de forma numérica:
 
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+rpart.rules(tree, style = "tall")
 
+```
 
+* **Modelo Decision Tree sin poda:**
 
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+obs_tree1 <- as.factor(fcr_train_tree$loan_status)
+head(predict(tree, newdata = fcr_train_tree))
 
+```
 
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+pred_tree1 <- predict(tree, newdata = fcr_train_tree, type = "class")
+table(obs_tree1, pred_tree1)
 
+```
 
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+caret::confusionMatrix(pred_tree1, obs_tree1)
 
+```
+
+Se obtiene un valor del 94.31% para la precisión del modelo, con el incoveniente de tener un modelo sin poda, demasiado complejo y que puede tender al sobreajuste.
+
+Se realiza por ello la valoración para una posible poda del modelo que permita simplificarlo y hacerlo más explicativo sin perder capacidad predictora. Para ello vemos el CP o “Parámetro de complejidad” con el cual buscamos el árbol menos profundo que además minimice la tasa de error.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+plotcp(tree) 
+#CP - PARÁMETRO DE COMPLEJIDAD: Buscamos el árbol menos profundo que además minimiza la tasa de error
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+printcp(tree)
+
+```
+
+Finalmente decimos proceder a realizar la poda y crear un modelo alternativo más simplificado:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+xerror <- tree$cptable[, "xerror"]
+imin.xerror <- which.min(xerror)
+upper.xerror <- xerror[imin.xerror] + tree$cptable[imin.xerror,
+    "xstd"]
+icp <- min(which(xerror <= upper.xerror))
+cp <- tree$cptable[icp, "CP"]
+cp
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+tree_2 <- prune(tree, cp = cp)
+# tree summary(tree) caret::varImp(tree) importance <-
+# tree$variable.importance importance <-
+# round(100*importance/sum(importance), 1)
+# importance[importance >= 1]
+rpart.plot(tree_2, nn = TRUE, extra = 104, box.palette = "GnBu",
+    branch.lty = 3, shadow.col = "gray")  #, main='Classification tree winetaste'
+
+```
+
+* **Modelo Decision Tree con poda:**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+obs_tree2 <- as.factor(fcr_train_tree$loan_status)
+head(predict(tree_2, newdata = fcr_train_tree))
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+pred_tree2 <- predict(tree_2, newdata = fcr_train_tree, type = "class")
+table(obs_tree2, pred_tree2)
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+caret::confusionMatrix(pred_tree2, obs_tree2)
+
+```
+
+Aplicando la poda a nuestro árbol obtenemos un modelo mas limpio, simple, explicativo y generalizable a otro conjunto de datos, evitando el posible sobreajuste del modelo y solo reduciendo su capacidad predictora a un valor de precisión del 93.08%. Entendemos que este modelo podado será el óptimo en este caso.
+
+### 7.2.1. DECISION TREE - Cross Validation, Hiperparámetros y Evaluación del modelo
+
+Tratamos de aplicar Cross Validation sobre el modelo de árbol de decisión y realizar una selección de hiperparámetros (se busca tener un modelo robusto, generalizable y comparable con el resto para la posterior selección del mejor):
+
+De cara a obtener el mejor modelo posible realizaremos validación cruzada de 5 folds y trataremos de ajustar hiperparámetros (el “cp” óptimo para un modelo ya validado). Utilizamos además las variables que hemos vito como más representativas y explicativas de la variable respuesta “loan_status”.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# Fit the model on the training set
+set.seed(1234)
+caret.tree <- train(as.factor(loan_status) ~ person_income + person_emp_length +
+            loan_amnt + loan_int_rate + person_home_ownership + loan_intent +
+            loan_grade + loan_percent_income,  data = fcr_train_tree,
+    method = "rpart", trControl = trainControl("cv", number = 5,
+        search = "grid", returnResamp = "final"), tuneLength = 20)
+# Plot model accuracy vs different values of cp (complexity
+# parameter)
+plot(caret.tree)
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+caret.tree
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+caret.tree$bestTune
+
+```
+
+Realizando la validación cruzada vemos que el CP óptimo para nuestro modelo de árbol de decisión se encuentra en 0.0008781173.
+
+Visualizamos graficamente el árbol obtenido:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# Plot the final tree model
+par(xpd = NA) # Avoid clipping the text in some device
+plot(caret.tree$finalModel,uniform=TRUE)
+text(caret.tree$finalModel,  digits = 10)
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+get_best_result = function(caret_fit) {
+    best = which(rownames(caret_fit$results) == rownames(caret_fit$bestTune))
+    best_result = caret_fit$results[best, ]
+    rownames(best_result) = NULL
+    best_result
+}
+
+get_best_result(caret.tree)
+
+```
+
+Obtenemos finalmente haciendo validación cruzada una precisión del 92/93%, con un modelo que ha sido comprobado como robusto y generalizable para funcionar previsiblemente en otro conjunto de datos diferente.
+
+Evaluación del rendimiento predictivo del modelo Decision Tree presentado con las datos de train (metrica de evaluación utilizada de referencia: “Accuracy”, "Recall", "Precision", "F1" y "ROC", y punto de corte utilizado: 0.5):
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train_tree$y_pred_probs2 <- predict(caret.tree, newdata = fcr_train_tree,
+    type = "prob")
+fcr_train_tree$y_pred_probs2 <- ifelse(fcr_train_tree$y_pred_probs2$`1` >
+    0.5, fcr_train_tree$y_pred_probs2$`1`, 1 - fcr_train_tree$y_pred_probs2$`0`)
+
+fcr_train_tree$y_pred2 <- ifelse(fcr_train_tree$y_pred_probs2 > 0.5,
+    1, 0)
+
+# fcr_train_tree$y_pred_probs2 fcr_train_tree$y_pred2
+```
+
+Reproducimos la matriz de confusión y las métricas de evaluación sobre el modelo final de Decision Tree obtenido:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+cm_train_tree <- confusionMatrix(as.factor(fcr_train_tree$y_pred2),
+    as.factor(fcr_train_tree$loan_status), positive = "1")
+cm_train_tree$table
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+accuracy_modelo_tree_tune <- cm_train_tree$overall["Accuracy"] %>%
+    round(4)
+accuracy_modelo_tree_tune
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+recall_modelo_tree_tune <- cm_train_tree$byClass["Recall"] %>%
+    round(4)
+recall_modelo_tree_tune
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+precision_modelo_tree_tune <- cm_train_tree$byClass["Precision"] %>%
+    round(4)
+precision_modelo_tree_tune
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+F1Score_modelo_tree_tune <- (2*(precision_modelo_tree_tune * recall_modelo_tree_tune) / (precision_modelo_tree_tune + recall_modelo_tree_tune)) %>%
+    round(4)
+F1Score_modelo_tree_tune
+
+```
+
+Reproducimos la curva ROC sobre el modelo final de árbol de decisión obtenido:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+roc_tree <- plot.roc(as.numeric(fcr_train_tree$loan_status), as.numeric(fcr_train_tree$y_pred_probs2),
+    col = "yellow")
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+auc(roc_tree)
+
+```
+
+Se obtiene alrededor de un 88.29% de área bajo la curva.
+
+## 7.3. RANDOM FOREST
+
+Primero se crean unos datos de train específicos para ser usados en el desarrollo del modelo de random forest, y así mantener los originales sin modificar.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train_forest <- fcr_train
+fcr_train_forest
+
+```
+
+Creamos el modelo base de random forest realizando una simulación con 1000 árboles:
+
+```{r, include=TRUE, message=FALSE, include=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+set.seed(4343)
+rf <-randomForest(as.factor(loan_status)~., data=fcr_train_forest, ntree=1000, do.trace=T, importance=T)
+rf
+
+```  
+
+Examinamos la convergencia del error en las muestras:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+plot(rf,main="")
+legend("right", colnames(rf$err.rate), lty = 1:5, col = 1:6)
+
+```
+
+Vemos la relevancia de las variables en el modelo:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+varImpPlot(rf)
+
+```
+
+### 7.3.1. RANDOM FOREST - Cross Validation, Hiperparámetros y Evaluación del modelo
+
+Tratamos de aplicar Cross Validation sobre el modelo de random forest y realizar una selección de hiperparámetros (se busca tener un modelo robusto, generalizable y comparable con el resto para la posterior selección del mejor):
+
+Vemos que el principal parámetro a configurar es el número de predictores al azar que toma el modelo.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+modelLookup("rf")
+
+```
+
+Creamos un modelo aplicando la validación cruzada y ajustando hiperparámetros (mtry, número de árboles y el tamaño de los nodos para regular su profundidad) de tal forma que creemos un modelo robusto y generalizable. Tomamos como base las variables de mayor relevancia que hemos observado:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# Fit the model on the training set
+set.seed(12345)
+
+caret.rf <- train(as.factor(loan_status) ~ loan_percent_income + person_income + loan_grade + person_home_ownership ,  data = fcr_train_forest,
+    method = "rf", ntree = 20, importance = TRUE, metric = "Accuracy",
+    trControl = trainControl("cv", number = 5, search = "grid",
+        returnResamp = "final"), nodesize = 30, tuneLength = 10)
+
+plot(caret.rf)
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+caret.rf
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+caret.rf$bestTune
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+get_best_result = function(caret_fit) {
+    best = which(rownames(caret_fit$results) == rownames(caret_fit$bestTune))
+    best_result = caret_fit$results[best, ]
+    rownames(best_result) = NULL
+    best_result
+}
+
+get_best_result(caret.rf)
+```
+
+Evaluación del rendimiento predictivo del modelo Decision Tree presentado con las datos de train (metrica de evaluación utilizada de referencia: “Accuracy”, "Recall", "Precision", "F1" y "ROC", y punto de corte utilizado: 0.5):
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train_forest$y_pred_probs2 <- predict(caret.rf, newdata = fcr_train_forest,
+    type = "prob")
+fcr_train_forest$y_pred_probs2 <- ifelse(fcr_train_forest$y_pred_probs2$`1` >
+    0.5, fcr_train_forest$y_pred_probs2$`1`, 1 - fcr_train_forest$y_pred_probs2$`0`)
+
+fcr_train_forest$y_pred2 <- ifelse(fcr_train_forest$y_pred_probs2 > 0.5,
+    1, 0)
+
+# fcr_train_forest$y_pred_probs2 fcr_train_forest$y_pred2
+# fcr_train_forest
+```
+
+Reproducimos la matriz de confusión y las métricas de evaluación sobre el modelo final de Decision Tree obtenido:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+cm_train_forest <- confusionMatrix(as.factor(fcr_train_forest$y_pred2),
+    as.factor(fcr_train_forest$loan_status), positive = "1")
+cm_train_forest$table
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+accuracy_modelo_forest_tune <- cm_train_forest$overall["Accuracy"] %>%
+    round(4)
+accuracy_modelo_forest_tune
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+recall_modelo_forest_tune <- cm_train_forest$byClass["Recall"] %>%
+    round(4)
+recall_modelo_forest_tune
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+precision_modelo_forest_tune <- cm_train_forest$byClass["Precision"] %>%
+    round(4)
+precision_modelo_forest_tune
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+F1Score_modelo_forest_tune <- (2*(precision_modelo_forest_tune * recall_modelo_forest_tune) / (precision_modelo_forest_tune + recall_modelo_forest_tune)) %>%
+    round(4)
+F1Score_modelo_forest_tune
+
+```
+
+Reproducimos la curva ROC sobre el modelo final de random forest obtenido:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+roc_forest <- plot.roc(as.numeric(fcr_train_forest$loan_status), as.numeric(fcr_train_forest$y_pred_probs2),
+    col = "red")
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+auc(roc_forest)
+
+```
+
+Se obtiene alrededor de un 94.73% de área bajo la curva.
 
 
 
