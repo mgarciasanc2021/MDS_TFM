@@ -646,6 +646,20 @@ fcr_train %>%
 
 Se realiza un análisis de las variables categóricas en relación con el resto de variables numéricas del dataset. Se trata de entender las características personales de la gente y su actividad creditica para tratar de sacar un cierto análisis preliminar.
 
+* **Variable cb_person_default_on_file en función de las variables loan_int_rate y person_income:**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+plot1 <- ggplot(fcr_train, aes(loan_int_rate, loan_percent_income, col=cb_person_default_on_file)) +
+  geom_point() + ylab("Loan % income") + xlab("Interest rate") + labs(color = "Previous default: ") +
+  theme(legend.position="bottom") 
+
+ggExtra::ggMarginal(plot1, type = "boxplot")
+
+```
+
+Con este gráfico se puede entender que los tipos de interés aplicados por las entidades bancarias en los préstamos que conceden, vienen influidos por si el cliente ha registrado algún impago anterior en su historial crediticio. Además, se ve como el porcentaje de lo que supone el préstamo sobre los ingresos anuales en dólares de la persona que toma el crédito, no es algo definitivo para establecer el tipo de interés que se aplica en la operación.
+
+
 * **Variable person_home_ownership en función de las variables person_age y person_income:**
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
@@ -786,6 +800,394 @@ En este último gráfico se compara el riesgo de crédito con tres variables con
 
 # *APLICACIÓN DE LAS TÉCNICAS Y MODELOS DE MACHINE LEARNING*
 
-# 7. Técnicas de reducción de la dimensionalidad
+En esta parte del trabajo, se trata de aplicar diferentes técnicas y algoritmos sobre nuestros datos, de forma que nos lleven a la mejor predición y clasificación posible de la calidad del vino analizado. Para la comparación y selección del mejor algoritmo utilizaremos como métricas de evaluación: “Accuracy”, "Precision", "Recall" y "F1 Score", y trataremos de establecer el mejor punto de corte posible que maximice la misma.
+
+# 7. Aprendizaje supervisado
+
+En este apartado se analizan diferentes algoritmos supervisados (con datos etiquetados para su predicción o clasificación) sobre nuestro conjunto de datos sobre créditos bancarios.
+
+## 7.1. GLM - Generalized Lineal Model
+
+### 7.1.1. Variable de interés y análisis de relaciones entre variables
+
+Primero se crean unos datos de train específicos para ser usados en el desarrollo del modelo GLM, y así mantener los originales sin modificar.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train_glm <- fcr_train
+fcr_train_glm
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+table(fcr_train_glm$loan_status)
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+prop.table(table(fcr_train_glm$loan_status))
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+str(fcr_train_glm)
+
+```
+
+Analizando la distinción entre créditos impagados y no impagados, vemos que la distibución entre ambos grupos está poco balanceada, con 20.365 no impagados (78.15%) y 5.694 (21.85%) impagados en los datos de train.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+corrplot(cor(fcr_train_glm %>%
+    mutate(loan_status = as.numeric(loan_status)) %>%
+    keep(is.numeric)))
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+res <- cor(fcr_train_glm %>%
+    mutate(loan_status = as.numeric(loan_status)) %>%
+    keep(is.numeric))
+round(res, 2)
+
+```
+
+Analizamos de forma bivariante las variables:
+
+* **Variable loan_int_rate**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train_glm %>%
+    ggplot(aes(x = loan_int_rate, fill = factor(loan_status))) + geom_density(alpha = 0.5)
+
+```
+
+* **Variable loan_percent_income**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train_glm %>%
+    ggplot(aes(x = loan_percent_income, fill = factor(loan_status))) + geom_density(alpha = 0.5)
+
+```
+
+En términos generales vemos como los créditos analizados que estan en la categoria de impagados, tienen en general un mayor valor de “loan_int_rate” y de "loan_percent_income".
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train_glm %>%
+    ggplot(aes(x = cb_person_cred_hist_length, fill = factor(loan_status))) + geom_density(alpha = 0.5)
+
+```
+
+* **Variable loan_amnt**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train_glm %>%
+    ggplot(aes(x = loan_amnt, fill = factor(loan_status))) + geom_density(alpha = 0.5)
+
+```
+
+* **Variable person_emp_length**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train_glm %>%
+    ggplot(aes(x = person_emp_length, fill = factor(loan_status))) + geom_density(alpha = 0.5)
+
+```
+
+* **Variable person_age**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train_glm %>%
+    ggplot(aes(x = person_age, fill = factor(loan_status))) + geom_density(alpha = 0.5)
+
+```
+
+* **Variable person_income**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train_glm %>%
+    ggplot(aes(x = person_income, fill = factor(loan_status))) + geom_density(alpha = 0.5)
+
+```
+
+En los casos de las variables “cb_person_cred_hist_length”, “loan_amnt”, “person_emp_length”, “person_age” y “person_income”, cuesta más distinguir en el gráfico de densidad entre créditos impagados o no impagados, ya que no son características tan definitivas de un grupo u otro.
+
+### 7.1.2. Creación del modelo de Regresión Logística
+
+Generamos un modelo de regresión logística en base a las variables de nuestro dataset que sirva como predictor de la variable binaria creada.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+modelo_glm <- glm(loan_status ~ ., data = fcr_train_glm, family = binomial(link = 'logit'))
+modelo_glm
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+summary(modelo_glm)
+
+```
+
+Como observamos, nos quedamos solo con las variables significativas que relamente afectan a “loan_status”, y creamos un nuevo modelo exclusivamente con ellas. De esta forma simplificamos el modelo, nos quedamos con las varibales realmente importantes para el modelo predictor y creamos el mejor modelo de regresión logística posible para nuestro conjunto de datos. En principio las variables "cb_person_cred_hist_length", "cb_person_default_on_file" y "person_age", no parecen ser estadisticamente significativas.
+
+Se podría también pensar en la exclusión del modelo, de la variable "loan_percent_income", ya que de forma lógica y como se oberva en las correlaciones, es una variable que viene calculada, relaciona y explicada con las variables "person_income" y "loan_amnt". Esto nos puede llegar a generar multicolinearidad y crear redundancia en los cálculos que hagamos para el modelo.
+
+Finalmente se establece el siguiente modelo definitivo:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+modelo_glm2 <- glm(loan_status ~ person_income + person_emp_length +
+            loan_amnt + loan_int_rate + person_home_ownership + loan_intent +
+            loan_grade + loan_percent_income, data = fcr_train_glm, family = binomial)
+modelo_glm2
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+summary(modelo_glm2)
+
+```
+
+Los residuos de desviación tienen buen aspecto, aunque los valores no están completamente centrados en cero y no son simétricos. Las estimaciones son los parámetros de nuestro interés, mientras que la columna Pr(>|z|) muestra los valores p de dos colas que prueban la hipótesis nula de que el coeficiente es igual a cero. En otras palabras, muestra la importancia de los efectos de cada variable independiente. En nuestro modelo parece que la mayoría de las variables son estadísticamente significativas, sin embargo, para confirmar esta hipótesis procedemos a utilizar la prueba anova, observando la tabla de desviación.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+anova(modelo_glm2, test="Chisq")
+
+```
+
+La diferencia entre la desviación nula y la desviación residual muestra cómo se comporta nuestro modelo frente al modelo nulo, es decir, un modelo con sólo el intercepto. La prueba anova dice que añadir estas variables mejora el modelo de forma significativa, de hecho, los valores p bajos significan que las variables explican una gran parte de la variabilidad.
+
+Ahora se puede analizar el ajuste e interpretar lo que nos dice el modelo. Como se ha analizado, el modelo sugiere que la mayoría de los p-valores muestran relevancia estadística en los resultados. Los únicos que no serían de la categoría HOMEIMPROVEMENT de la variable loan_intent y la categoría OTHER de la variable person_home_ownership, que no son significativos.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+cbind(Estimate=round(coef(modelo_glm2),5),
+ OR=round(exp(coef(modelo_glm2)),5))
+```
+
+La columna Estimate calculada representa los coeficientes en forma de log-odds. Esto significa que cuando aumentamos la variable loan_int_rate en una unidad, podríamos esperar un cambio en las probabilidades logarítmicas de aproximadamente 0.05570. También podríamos utilizar esta información observando el signo de cada estimación, para entender si el efecto del predictor es positivo o negativo.
+
+Según se puede observar en la tabla calculada, variables numéricas como person_emp_length o loan_amnt disminuyen las probabilidades de default, sin embargo, variables numéricas como loan_int_rate o loan_percent_income las incrementan. 
+
+Las variables categóricas deben interpretarse de forma un poco diferente. En este caso, la estimación representa el cambio en las probabilidades logarítmicas tomando como referencia una categoría base como, por ejemplo, en la regresión person_home_ownership-MORTAGE, loan_intent-DEBTCONSOLIDATION y loan_grade-A. En otras palabras, estar, por ejemplo, en la categoría loan_grade-B aumenta la log-odds de impago en 0.24616, con respecto a estar en loan_grade-A.
+
+Según los resultados que obtenemos, cuando, por ejemplo, el parámetro del tipo de interés (variable loan_int_rate) aumenta una unidad (manteniendo constantes todos los demás predictores), las probabilidades de y = 1 (impago) son 1.05728 más altas o, dicho de otro modo, aumentan aproximadamente un 5.728%. La misma lógica se aplica a todas las demás variables, por lo que, por ejemplo, el aumento de la duración del empleo (variable person_emp_length) en una unidad conduce a una disminución de las probabilidades de impago de 0.98587.
+
+Un elemento a tener en cuenta en el análisis es la variable loan_grade. Se puede observar que a medida que nos acercamos a grados inferiores, las probabilidades de impago aumentan enormemente. Como se dijo posteriormente, las variables categóricas deben interpretarse con respecto a la categoría base, así que en este caso comparando otros niveles con el grado A. Esta variable parece ser muy influyente y se podría decir que la graduación es adecuada y resulta útil para identificar posibles riesgos de impago para prestatarios y prestamistas.
+
+Una interpretación de los coeficientes similar a la realizada sería:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+round(exp(cbind(Estimate = coef(modelo_glm2), confint(modelo_glm2))),2)
+
+```
+
+Los intervalos de confianza no se basan en un test de Wald (como en regresión tradicional), sino en un perfilado (profiling) de la log-likelihood, que es más preciso.
+
+Predicción de valores del modelo:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+head(predict(modelo_glm2))
+
+```
+
+Probabilidad en escala de la salida:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+head(predict(modelo_glm2, type = "response"))
+
+```
+
+A la hora de desarrollar modelos de predicción, la métrica más importante es determinar la eficacia del modelo para predecir la variable objetivo en observaciones fuera de la muestra. Para ello, podemos comparar la variable objetivo predicha con los valores observados mediante la matriz de confusión.
+
+Evaluación del rendimiento predictivo del modelo GLM presentado con las datos de train:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train_glm$y_pred_probs <- predict(modelo_glm2, fcr_train_glm, type = "response")
+fcr_train_glm$y_pred <- ifelse(fcr_train_glm$y_pred_probs > 0.5, 1, 0)
+
+# fcr_train_glm$y_pred_probs fcr_train_glm$y_pred
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+cm_train <- confusionMatrix(as.factor(fcr_train_glm$y_pred), as.factor(fcr_train_glm$loan_status),
+    positive = "1")
+cm_train$table
+
+```
+
+La matriz de confusión es una tabla que describe el rendimiento de clasificación de cada modelo en los datos de prueba. En nuestro caso, los "1" y "0" de las filas representan si las personas han incumplido o no, mientras que las columnas "FALSO" y "VERDADERO" indican si predijimos que las personas incumplirían o no. La tabla siguiente sólo muestra las proporciones.
+
+Más concretamente:
+
+* **Verdaderos positivos (cuadrante inferior derecho):** son casos en los que predijimos que la gente incumpliría y lo hizo.
+* **Verdaderos negativos (cuadrante superior izquierdo):** Predijimos que no habría impago y la gente no lo hizo.
+* **Falsos positivos (cuadrante superior derecho):** Predijimos un impago, pero en realidad no se produjo. (Error de tipo I)
+* **Falsos negativos (cuadrante inferior izquierdo):** Predijimos que no habría impago, pero sí lo hubo. (Error de tipo II)
+
+Se utilizan diferentes métricas de evaluación del modelo:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+accuracy_modelo_glm2 <- cm_train$overall["Accuracy"] %>%
+    round(4)
+accuracy_modelo_glm2
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+recall_modelo_glm2 <- cm_train$byClass["Recall"] %>%
+    round(4)
+recall_modelo_glm2
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+precision_modelo_glm2 <- cm_train$byClass["Precision"] %>%
+    round(4)
+precision_modelo_glm2
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+F1Score_modelo_glm2 <- ((2 * precision_modelo_glm2 * recall_modelo_glm2) / (precision_modelo_glm2 + recall_modelo_glm2)) %>%
+    round(4)
+F1Score_modelo_glm2
+
+```
+
+Viendo el valor de las metricas obtenidas (con un punto de corte en 0.5), el valor de Accuracy (número de predicciones correctas/número total de predicciones) se situa en el 87%, el de Precision (positivos verdaderos/(positivos verdaderos + falsos positivos)) se situa en un 77%, el de Recall o Sensitividad (positivos verdaderos/(positivos verdaderos/falsos negativos)) en un 56% y el F1 Score (considerado como una media armónica que combina los valores de la precisión o precision y de la exhaustividad o recall) en un 65%.
+
+Con estos datos entendemos que con el modelo desarrollado, en alrededor del 87% de los casos este será capaz de predecir si un crédito va a ser impagado o no.
+
+### 7.1.3. GLM - Cross Validation, Hiperparámetros y Evaluación del modelo
+
+Una vez desarrollado el modelo, se trata de aplicar Cross Validation sobre el modelo de GLM y realizar una selección de hiperparámetros (se busca tener un modelo robusto, generalizable y comparable con el resto para la posterior selección del mejor):
+
+Vemos primero cuales son las posibles variables que tienes el modelo para tratar de configurar. Cómo se puede ver, el modelo GLM no tiene la posibilidad de ajustar hiperparámetros.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+## https://machinelearningmastery.com/how-to-estimate-model-accuracy-in-r-using-the-caret-package/?msclkid=37e9f222aa8711ec9c857e7c4b89d202
+## https://daviddalpiaz.github.io/r4sl/the-caret-package.html#classification
+
+# Vemos hiperparámetros que se pueden configurar
+
+modelLookup("glm")
+
+```
+
+Creamos el modelo con las variables seleccionadas como relevantes y haciendo Cross Validation on 5 particiones del dataset de train.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+caret.glm <- train(as.factor(loan_status) ~ person_income + person_emp_length +
+            loan_amnt + loan_int_rate + person_home_ownership + loan_intent +
+            loan_grade + loan_percent_income, 
+                   method = "glm",
+                   family = "binomial",
+                   data = fcr_train_glm,
+                   trControl = trainControl(method = "cv", number = 5, search = "grid",returnResamp = "final"))
+caret.glm
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+summary(caret.glm)
+
+```
+
+Con estos datos entendemos que con el modelo desarrollado, en alrededor del 86/87% de los casos este será capaz de predecir si un crédito va a ser impagado o no.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+confusionMatrix(caret.glm)
+
+```
+
+Evaluación del rendimiento predictivo del modelo GLM presentado con las datos de train (metrica de evaluación utilizada de referencia: “Accuracy” y punto de corte utilizado: 0.5):
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train_glm$y_pred_probs2 <- predict(caret.glm, fcr_train_glm, type = "prob")
+fcr_train_glm$y_pred_probs2 <- ifelse(fcr_train_glm$y_pred_probs2$`1` >
+    0.5, fcr_train_glm$y_pred_probs2$`1`, 1 - fcr_train_glm$y_pred_probs2$`0`)
+fcr_train_glm$y_pred2 <- ifelse(fcr_train_glm$y_pred_probs2 > 0.5, 1,
+    0)
+
+# fcr_train_glm$y_pred_probs2 fcr_train_glm$y_pred2
+
+```
+
+Reproducimos la matriz de confusión y las métricas de evaluación sobre el modelo final de GLM obtenido:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+cm_train2 <- confusionMatrix(as.factor(fcr_train_glm$y_pred2), as.factor(fcr_train_glm$loan_status),
+    positive = "1")
+cm_train2$table
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+accuracy_modelo_glm2_tune <- cm_train2$overall["Accuracy"] %>%
+    round(4)
+accuracy_modelo_glm2_tune
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+recall_modelo_glm2_tune <- cm_train2$byClass["Recall"] %>%
+    round(4)
+recall_modelo_glm2_tune
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+precision_modelo_glm2_tune <- cm_train2$byClass["Precision"] %>%
+    round(4)
+precision_modelo_glm2_tune
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+F1Score_modelo_glm2_tune <- ((2 * precision_modelo_glm2_tune * recall_modelo_glm2_tune) / (precision_modelo_glm2_tune + recall_modelo_glm2_tune)) %>%
+    round(4)
+F1Score_modelo_glm2_tune
+
+```
+
+Reproducimos la curva ROC sobre el modelo final de GLM obtenido:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+roc_glm <- plot.roc(as.numeric(fcr_train_glm$loan_status), as.numeric(fcr_train_glm$y_pred_probs2),
+    col = "blue")
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+auc(roc_glm)
+
+```
+
+Se obtiene alrededor de un 87% de área bajo la curva.
+
+## 7.2. DECISION TREE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
