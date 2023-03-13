@@ -1645,7 +1645,7 @@ fcr_train_ADABoost$y_pred2 <- ifelse(fcr_train_ADABoost$y_pred_probs2 > 0.5, 1, 
 # fcr_train_ADABoost$y_pred_probs2 fcr_train_ADABoost$y_pred2 fcr_train_ADABoost
 ```
 
-Reproducimos la matriz de confusión y las métricas de evaluación sobre el modelo final de Decision Tree obtenido:
+Reproducimos la matriz de confusión y las métricas de evaluación sobre el modelo final de ADABoost obtenido:
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 cm_train_ada <- confusionMatrix(as.factor(fcr_train_ADABoost$y_pred2), as.factor(fcr_train_ADABoost$loan_status),
@@ -1690,7 +1690,7 @@ Reproducimos la curva ROC sobre el modelo final de ADABoost obtenido:
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 roc_ada <- plot.roc(as.numeric(fcr_train_ADABoost$loan_status), as.numeric(fcr_train_ADABoost$y_pred_probs2),
-    col = "orange")
+    col = "green")
 ```
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
@@ -1702,7 +1702,7 @@ Se obtiene alrededor de un 91.69% de área bajo la curva.
 
 # 11. XGBoost - Extreme Gradient Boosting
 
-Primero se crean unos datos de train específicos para ser usados en el desarrollo del modelo de ADABoost, y así mantener los originales sin modificar.
+Primero se crean unos datos de train específicos para ser usados en el desarrollo del modelo de XGBoost, y así mantener los originales sin modificar.
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 fcr_train_XGBoost <- fcr_train
@@ -1750,7 +1750,7 @@ varImp(caret.xgb)
 
 ```  
 
-Evaluación del rendimiento predictivo del modelo Ada Boost presentado con las datos de train (metrica de evaluación utilizada de referencia: “Accuracy”, "Recall", "Precision", "F1" y "ROC", y punto de corte utilizado: 0.5):
+Evaluación del rendimiento predictivo del modelo XG Boost presentado con las datos de train (metrica de evaluación utilizada de referencia: “Accuracy”, "Recall", "Precision", "F1" y "ROC", y punto de corte utilizado: 0.5):
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 fcr_train_XGBoost$y_pred_probs2 <- predict(caret.xgb, newdata = fcr_train_XGBoost,
@@ -1764,7 +1764,7 @@ fcr_train_XGBoost$y_pred2 <- ifelse(fcr_train_XGBoost$y_pred_probs2 > 0.5, 1,
 # fcr_train_XGBoost$y_pred_probs2 fcr_train_XGBoost$y_pred2 fcr_train_XGBoost
 ```
 
-Reproducimos la matriz de confusión y las métricas de evaluación sobre el modelo final de Decision Tree obtenido:
+Reproducimos la matriz de confusión y las métricas de evaluación sobre el modelo final de XG Boost obtenido:
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 cm_train_xgb <- confusionMatrix(as.factor(fcr_train_XGBoost$y_pred2), as.factor(fcr_train_XGBoost$loan_status),
@@ -1821,11 +1821,222 @@ Se obtiene alrededor de un 96.54% de área bajo la curva.
 
 # *COMPARACIÓN DE LAS TÉCNICAS Y MODELOS DE MACHINE LEARNING*
 
+# 12. Comparación entre los diferentes modelos
 
+Los modelo que han sido evaluados en este trabajo para los datos analizados han sido:
 
+* **Modelo de regresión logística (GLM)**
+* **Modelo de árbol de decisión (Decision Tree)**
+* **Modelo de bosque (Random Forest)**
+* **Modelo de métodos de ensamble (ADABoost y XGBoost)**
 
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+accuracy <- c(accuracy_modelo_glm2_tune, accuracy_modelo_tree_tune, accuracy_modelo_forest_tune, accuracy_modelo_ada_tune, accuracy_modelo_xgb_tune)
 
+recall <- c(recall_modelo_glm2_tune, recall_modelo_tree_tune, recall_modelo_forest_tune, recall_modelo_ada_tune, recall_modelo_xgb_tune)
 
+precision <- c(precision_modelo_glm2_tune, precision_modelo_tree_tune, precision_modelo_forest_tune, precision_modelo_ada_tune, precision_modelo_xgb_tune)
+
+F1Score <- c(F1Score_modelo_glm2_tune, F1Score_modelo_tree_tune, F1Score_modelo_forest_tune, F1Score_modelo_ada_tune, F1Score_modelo_xgb_tune)
+
+ROC <- c(auc(roc_glm), auc(roc_tree), auc(roc_forest), auc(roc_ada), auc(roc_xgb))
+
+modelo <- c("GLM", "Decision Tree", "Random Forest", "ADABoost", "XGBoost")
+
+datos <- data.frame(modelo = modelo, accuracy = accuracy, recall = recall, precision = precision,
+                    F1Score = F1Score, ROC = ROC)
+
+head(datos)
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+#GLM
+pred1 <- predict(modelo_glm2, fcr_train_glm, type="response")
+pred.glm <- prediction(pred1, fcr_train_glm$loan_status)
+perf.glm <- performance(pred.glm,"tpr", "fpr")
+plot(perf.glm, col = "blue", lwd = 2)
+
+#DECISION TREE
+pred3 <- predict(caret.tree, newdata = fcr_train_tree, type = "prob")
+pred33 <- ifelse(pred3$`1` > 0.5, pred3$`1`, 1-pred3$`0`)
+pred.tree <- prediction(pred33, fcr_train_tree$loan_status)
+perf.tree <- performance(pred.tree,"tpr", "fpr")
+plot(perf.tree, add = TRUE, col = "yellow", lwd = 2)
+
+#RANDOM FOREST
+pred4 <- predict(caret.rf, newdata = fcr_train_forest, type = "prob")
+pred44 <- ifelse(pred4$`1` > 0.5, pred4$`1`, 1-pred4$`0`)
+pred.rf <- prediction(pred44, fcr_train_forest$loan_status)
+perf.rf <- performance(pred.rf,"tpr", "fpr")
+plot(perf.rf, add = TRUE, col = "red", lwd = 2)
+
+#ADA BOOST
+pred5 <- predict(caret.ada, newdata = fcr_train_ADABoost, type = "prob")
+pred55 <- ifelse(pred5$`1` > 0.5, pred5$`1`, 1-pred5$`0`)
+pred.ada <- prediction(pred55, fcr_train_ADABoost$loan_status)
+perf.ada <- performance(pred.ada,"tpr", "fpr")
+plot(perf.ada, add = TRUE, col = "green", lwd = 2)
+
+#XG BOOST
+pred6 <- predict(caret.xgb, newdata = fcr_train_XGBoost, type = "prob")
+pred66 <- ifelse(pred6$`1` > 0.5, pred6$`1`, 1-pred6$`0`)
+pred.xgb <- prediction(pred66, fcr_train_XGBoost$loan_status)
+perf.xgb <- performance(pred.xgb,"tpr", "fpr")
+plot(perf.xgb, add = TRUE, col = "purple", lwd = 2)
+
+```
+
+Con los datos obtenidos, el mejor que mejores resultados da es el de XGBoost.
+
+# *VALIDACIÓN DE LOS RESULTADOS*
+
+# 13. Comprobación delos resultados con los datos de test
+
+## 13.1. Cambios, modificaciones y transformaciones sobre el dataset de test
+
+Realizamos los cambios y modificaciones necesarias sobre el conjunto de datos de test, aplicados previamente sobre nuestro dataset de train:
+
+* Ya se han realizado anteriormente la imputación de NAs del data set de test al avlor de la mediana de la variable de referencia.
+
+* Se ha optado finalmente en el trabajo por no tranformar ninguna variable a logaritmos, por lo que en el data set de test no habría que realizar nada al respecto.
+
+## 13.2. Comprobación del mejor modelo con datos de test
+
+**Comprobación del modelo de XG Boost con los datos de test:**
+
+Se procede ahora a validar la capacidad predictora del modelo desarrollado de XG Boost con el conjunto de datos de test.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_test$y_pred_probs2 <- predict(caret.xgb, newdata = fcr_test,
+    type = "prob")
+fcr_test$y_pred_probs2 <- ifelse(fcr_test$y_pred_probs2$`1` >
+    0.5, fcr_test$y_pred_probs2$`1`, 1 - fcr_test$y_pred_probs2$`0`)
+
+fcr_test$y_pred2 <- ifelse(fcr_test$y_pred_probs2 > 0.5, 1, 0)
+
+# fcr_test$y_pred_probs2 fcr_test$y_pred2 fcr_test
+```
+
+Se reproduce la matriz de confusión y las métricas de evaluación sobre el modelo final de XG Boost obtenido:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+cm_test_xgb <- confusionMatrix(as.factor(fcr_test$y_pred2), as.factor(fcr_test$loan_status),
+    positive = "1")
+cm_test_xgb$table
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+accuracy_modelo_xgb_tune_test <- cm_test_xgb$overall["Accuracy"] %>%
+    round(4)
+accuracy_modelo_xgb_tune_test
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+recall_modelo_xgb_tune_test <- cm_test_xgb$byClass["Recall"] %>%
+    round(4)
+recall_modelo_xgb_tune_test
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+precision_modelo_xgb_tune_test <- cm_test_xgb$byClass["Precision"] %>%
+    round(4)
+precision_modelo_xgb_tune_test
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+F1Score_modelo_xgb_tune_test <- (2*(precision_modelo_xgb_tune_test * recall_modelo_xgb_tune_test) / (precision_modelo_xgb_tune_test + recall_modelo_xgb_tune_test)) %>%
+    round(4)
+F1Score_modelo_xgb_tune_test
+
+```
+
+Comprobamos el área bajo la curva para el modelo de XG Boost en el conjunto de datos de test:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+roc_xgb_test <- plot.roc(as.numeric(fcr_test$loan_status), as.numeric(fcr_test$y_pred_probs2),
+    col = "purple")
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+auc(roc_xgb_test)
+
+```
+
+Se obtiene alrededor de un 94.92% de área bajo la curva.
+
+## 13.2. Comparativa del mejor modelo con datos de train vs datos de test
+
+**Comparativa del modelo de XG Boost en train y test:**
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+accuracy2 <- c(accuracy_modelo_xgb_tune, accuracy_modelo_xgb_tune_test)
+
+recall2 <- c(recall_modelo_xgb_tune, recall_modelo_xgb_tune_test)
+
+precision2 <- c(precision_modelo_xgb_tune, precision_modelo_xgb_tune_test)
+
+F1Score2 <- c(F1Score_modelo_xgb_tune, F1Score_modelo_xgb_tune_test)
+
+ROC2 <- c(auc(roc_xgb), auc(roc_xgb_test))
+
+datosreferencia <- c("train", "test")
+
+modelo2 <- c("XGBoost", "XGBoost")
+
+datos2 <- data.frame(modelo = modelo2, datos = datosreferencia, accuracy = accuracy2, recall = recall2, precision = precision2,
+                    F1Score = F1Score2, ROC = ROC2)
+
+head(datos2)
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+#XG BOOST TRAIN
+pred6 <- predict(caret.xgb, newdata = fcr_train_XGBoost, type = "prob")
+pred66 <- ifelse(pred6$`1` > 0.5, pred6$`1`, 1-pred6$`0`)
+pred.xgb <- prediction(pred66, fcr_train_XGBoost$loan_status)
+perf.xgb <- performance(pred.xgb,"tpr", "fpr")
+plot(perf.xgb, col = "black", lwd = 2)
+
+#XG BOOST TEST
+pred7 <- predict(caret.xgb, newdata = fcr_test, type = "prob")
+pred77 <- ifelse(pred7$`1` > 0.5, pred7$`1`, 1-pred7$`0`)
+pred.xgb2 <- prediction(pred77, fcr_test$loan_status)
+perf.xgb2 <- performance(pred.xgb2,"tpr", "fpr")
+plot(perf.xgb2, add = TRUE, col = "grey", lwd = 2)
+
+```
+
+Realizando la comprobación del modelo con los datos de test al final del análisis, se comprueba que es un modelo generalizables, robustos y con resultados relativamente similares tanto en train como en test, siendo esto un resultado final del trabajo positivo.
+
+# *CONCLUSIONES*
+
+# 14. Conclusiones generales del estudio
+
+* **Métrica de evaluación y punto de corte:*
+
+La métrica de evaluación y comparación entre modelos finalmente elegida ha sido el “Accuracy” (se busca con el presente trabajar predecir cuando un vino está aprobado y es bebible, y cuando, por el contrario, está suspenso y se debe tratar de evitar su recomendación o consumo), estableciendo el punto de corte en 0.5 (se han realizado pruebas con puntos de corte de 0.3, 0.5, 0.6, 0.7 y 0.8, y los mejores resultados obtenidos, los cuales maximizan nuestra métrica de evaluación, han sido con el punto de corte en 0.5).
+
+* **Ajuste de Hiperparámetros y Validación cruzada (Tuning y Cross Validation):**
+
+Siempre que ha sido posible se ha aplicado a los diferentes modelo un ajuste de los hiperparámetros para asegurar la optima configuración del algoritmo que asegure su comparabilidad, y se ha realizado una comprobación de la generalización del modelo mediente la técnica de Cross Validation (con 5 folds) para asegurar de esa forma su robustez.
+
+* **Comparativa entre modelos:**
+
+Se han realizado diferentes análisis y pruebas con los distintos algoritmos propuestos en la rúbrica de la asignatura consiguiendo resultados aceptables con la mayoría de ellos. Los que se han mostrado como más precisos y sencillos de implementar con nuestros datos han sido lo de clasificación con árboles de decisión, random forest y métodos de ensamble basados en los mismos.
+
+* **Resultados finales del análisis:**
+
+Finalmente se ha decidio optar por los algoritmos de Random Forest (algoritmo incluido en la rúbrica) y XG Boost (algoritmo no incluido en la rúbrica) como los modelos elegido como mejores. Ambos han sido comprobados con los datos de test al final del análisis y se han mostrado como modelos generalizables, robustos y con resultados relativamente similares tanto en train como en test, siendo esto un resultado final del trabajo positivo.
 
 
 
