@@ -802,13 +802,11 @@ En este último gráfico se compara el riesgo de crédito con tres variables con
 
 En esta parte del trabajo, se trata de aplicar diferentes técnicas y algoritmos sobre nuestros datos, de forma que nos lleven a la mejor predición y clasificación posible de la calidad del vino analizado. Para la comparación y selección del mejor algoritmo utilizaremos como métricas de evaluación: “Accuracy”, "Precision", "Recall" y "F1 Score", y trataremos de establecer el mejor punto de corte posible que maximice la misma.
 
-# 7. Aprendizaje supervisado
+En este apartado se analizan diferentes algoritmos supervisados (aprendizaje supervisado, con datos etiquetados para su predicción o clasificación) sobre nuestro conjunto de datos sobre créditos bancarios.
 
-En este apartado se analizan diferentes algoritmos supervisados (con datos etiquetados para su predicción o clasificación) sobre nuestro conjunto de datos sobre créditos bancarios.
+# 7. GLM - Generalized Lineal Model
 
-## 7.1. GLM - Generalized Lineal Model
-
-### 7.1.1. Variable de interés y análisis de relaciones entre variables
+## 7.1. Variable de interés y análisis de relaciones entre variables
 
 Primero se crean unos datos de train específicos para ser usados en el desarrollo del modelo GLM, y así mantener los originales sin modificar.
 
@@ -908,7 +906,7 @@ fcr_train_glm %>%
 
 En los casos de las variables “cb_person_cred_hist_length”, “loan_amnt”, “person_emp_length”, “person_age” y “person_income”, cuesta más distinguir en el gráfico de densidad entre créditos impagados o no impagados, ya que no son características tan definitivas de un grupo u otro.
 
-### 7.1.2. Creación del modelo de Regresión Logística
+## 7.2. Creación del modelo de Regresión Logística
 
 Generamos un modelo de regresión logística en base a las variables de nuestro dataset que sirva como predictor de la variable binaria creada.
 
@@ -1057,7 +1055,7 @@ Viendo el valor de las metricas obtenidas (con un punto de corte en 0.5), el val
 
 Con estos datos entendemos que con el modelo desarrollado, en alrededor del 87% de los casos este será capaz de predecir si un crédito va a ser impagado o no.
 
-### 7.1.3. GLM - Cross Validation, Hiperparámetros y Evaluación del modelo
+## 7.3. GLM - Cross Validation, Hiperparámetros y Evaluación del modelo
 
 Una vez desarrollado el modelo, se trata de aplicar Cross Validation sobre el modelo de GLM y realizar una selección de hiperparámetros (se busca tener un modelo robusto, generalizable y comparable con el resto para la posterior selección del mejor):
 
@@ -1171,7 +1169,7 @@ El ROC es una curva que se genera trazando la tasa de verdaderos positivos (TPR)
 
 Por lo tanto, para un buen modelo, la curva debería aumentar de forma pronunciada, indicando que el TPR (eje Y) aumenta más rápido que el FPR (eje X) a medida que disminuye la puntuación de corte. Cuanto mayor sea el área bajo la curva ROC, mejor será la capacidad predictiva del modelo. Esa métrica oscila entre 0,50 y 1,00, y los valores superiores a 0,80 indican que el modelo hace un buen trabajo al discriminar entre las dos categorías que componen nuestra variable objetivo.
 
-## 7.2. DECISION TREE
+# 8. DECISION TREE
 
 Primero se crean unos datos de train específicos para ser usados en el desarrollo del modelo de árbol de decisión, y así mantener los originales sin modificar.
 
@@ -1280,7 +1278,7 @@ caret::confusionMatrix(pred_tree2, obs_tree2)
 
 Aplicando la poda a nuestro árbol obtenemos un modelo mas limpio, simple, explicativo y generalizable a otro conjunto de datos, evitando el posible sobreajuste del modelo y solo reduciendo su capacidad predictora a un valor de precisión del 93.08%. Entendemos que este modelo podado será el óptimo en este caso.
 
-### 7.2.1. DECISION TREE - Cross Validation, Hiperparámetros y Evaluación del modelo
+## 8.1. DECISION TREE - Cross Validation, Hiperparámetros y Evaluación del modelo
 
 Tratamos de aplicar Cross Validation sobre el modelo de árbol de decisión y realizar una selección de hiperparámetros (se busca tener un modelo robusto, generalizable y comparable con el resto para la posterior selección del mejor):
 
@@ -1404,7 +1402,7 @@ auc(roc_tree)
 
 Se obtiene alrededor de un 88.29% de área bajo la curva.
 
-## 7.3. RANDOM FOREST
+# 9. RANDOM FOREST
 
 Primero se crean unos datos de train específicos para ser usados en el desarrollo del modelo de random forest, y así mantener los originales sin modificar.
 
@@ -1438,7 +1436,7 @@ varImpPlot(rf)
 
 ```
 
-### 7.3.1. RANDOM FOREST - Cross Validation, Hiperparámetros y Evaluación del modelo
+## 9.1. RANDOM FOREST - Cross Validation, Hiperparámetros y Evaluación del modelo
 
 Tratamos de aplicar Cross Validation sobre el modelo de random forest y realizar una selección de hiperparámetros (se busca tener un modelo robusto, generalizable y comparable con el resto para la posterior selección del mejor):
 
@@ -1554,6 +1552,278 @@ auc(roc_forest)
 ```
 
 Se obtiene alrededor de un 94.73% de área bajo la curva.
+
+# 10. ADABoost - Boosted Classification Tree
+
+Primero se crean unos datos de train específicos para ser usados en el desarrollo del modelo de ADABoost, y así mantener los originales sin modificar.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train_ADABoost <- fcr_train
+fcr_train_ADABoost
+
+```
+
+Creamos el modelo de boosting con una configuración inicial básica de parámetros:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+ada.boost <- ada(as.factor(loan_status) ~ ., data = fcr_train_ADABoost, type = "real",
+             control = rpart.control(maxdepth = 2, cp = 0, minsplit = 10, xval = 0),
+             iter = 150, nu = 0.05)
+ada.boost
+```
+
+Se analiza la evolución decreciente del error al aumentar el número de iteraciones en el modelo
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+plot(ada.boost)
+
+```
+
+Se pasa a evaluar la precisión del modelo en la muestra de train:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+set.seed(123)
+pred_ada <- predict(ada.boost, newdata = fcr_train_ADABoost)
+caret::confusionMatrix(pred_ada, as.factor(fcr_train_ADABoost$loan_status), positive = "1")
+
+```
+
+Con la configuración de parámetros realizada en el modelo ada de booting se obtiene un valor de accuracy del 92% para el caso de algoritmos de clasificación.
+
+Para optimizar los resultados del modelo creado y la generalización del modelo, se puede realizar un ajuste de hiperparámetros y validación cruzada:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+modelLookup("ada")
+
+```
+
+Se ven los parámetros de “iter”, “maxdepth” y “nu” que tiene el modelo ada de boosting para árboles de decisión en problemas de clasificación.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+set.seed(123)
+caret.ada <- train(as.factor(loan_status) ~ ., method = "ada", data = fcr_train_ADABoost,
+                   trControl = trainControl(method = "cv", number = 5, search = "grid",returnResamp = "final"))
+caret.ada
+
+```
+
+Obtenemos una configuración óptima de los hiperparámetros del modelo en “iter” = 150, “maxdepth” = 3 y “nu” = 0.1.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+caret.ada
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+caret.ada$bestTune
+
+```
+
+Con el modelo de base obtenemos un accuracy del 90% con los datos de train.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+get_best_result = function(caret_fit) {
+    best = which(rownames(caret_fit$results) == rownames(caret_fit$bestTune))
+    best_result = caret_fit$results[best, ]
+    rownames(best_result) = NULL
+    best_result
+}
+
+get_best_result(caret.ada)
+```
+
+Evaluación del rendimiento predictivo del modelo Ada Boost presentado con las datos de train (metrica de evaluación utilizada de referencia: “Accuracy”, "Recall", "Precision", "F1" y "ROC", y punto de corte utilizado: 0.5):
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train_ADABoost$y_pred_probs2 <- predict(caret.ada, newdata = fcr_train_ADABoost,
+    type = "prob")
+fcr_train_ADABoost$y_pred_probs2 <- ifelse(fcr_train_ADABoost$y_pred_probs2$`1` >
+    0.5, fcr_train_ADABoost$y_pred_probs2$`1`, 1 - fcr_train_ADABoost$y_pred_probs2$`0`)
+
+fcr_train_ADABoost$y_pred2 <- ifelse(fcr_train_ADABoost$y_pred_probs2 > 0.5, 1, 0)
+
+# fcr_train_ADABoost$y_pred_probs2 fcr_train_ADABoost$y_pred2 fcr_train_ADABoost
+```
+
+Reproducimos la matriz de confusión y las métricas de evaluación sobre el modelo final de Decision Tree obtenido:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+cm_train_ada <- confusionMatrix(as.factor(fcr_train_ADABoost$y_pred2), as.factor(fcr_train_ADABoost$loan_status),
+    positive = "1")
+cm_train_ada$table
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+accuracy_modelo_ada_tune <- cm_train_ada$overall["Accuracy"] %>%
+    round(4)
+accuracy_modelo_ada_tune
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+recall_modelo_ada_tune <- cm_train_ada$byClass["Recall"] %>%
+    round(4)
+recall_modelo_ada_tune
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+precision_modelo_ada_tune <- cm_train_ada$byClass["Precision"] %>%
+    round(4)
+precision_modelo_ada_tune
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+F1Score_modelo_ada_tune <- (2*(precision_modelo_ada_tune * recall_modelo_ada_tune) / (precision_modelo_ada_tune + recall_modelo_ada_tune)) %>%
+    round(4)
+F1Score_modelo_ada_tune
+
+```
+
+Reproducimos la curva ROC sobre el modelo final de ADABoost obtenido:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+roc_ada <- plot.roc(as.numeric(fcr_train_ADABoost$loan_status), as.numeric(fcr_train_ADABoost$y_pred_probs2),
+    col = "orange")
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+auc(roc_ada)
+
+```
+
+Se obtiene alrededor de un 91.69% de área bajo la curva.
+
+# 11. XGBoost - Extreme Gradient Boosting
+
+Primero se crean unos datos de train específicos para ser usados en el desarrollo del modelo de ADABoost, y así mantener los originales sin modificar.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train_XGBoost <- fcr_train
+fcr_train_XGBoost
+
+```
+
+Para optimizar los resultados del modelo creado, se puede realizar un ajuste de hiperparámetros con validación cruzada:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+modelLookup("xgbTree")
+
+```
+
+Creamos el modelo de boosting con una configuración inicial dada de parámetros:
+
+```{r, include=FALSE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+set.seed(2)
+caret.xgb <- train(as.factor(loan_status) ~ ., 
+                   method = "xgbTree", 
+                   data = fcr_train_XGBoost,
+                   trControl = trainControl(method = "cv", number = 5, search = "grid", returnResamp = "final"))
+caret.xgb
+
+```  
+
+Obtenemos una configuración óptima de los hiperparámetros del modelo en:
+
+```{r, include=FALSE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+get_best_result = function(caret_fit) {
+    best = which(rownames(caret_fit$results) == rownames(caret_fit$bestTune))
+    best_result = caret_fit$results[best, ]
+    rownames(best_result) = NULL
+    best_result
+}
+
+get_best_result(caret.xgb)
+
+```  
+
+Se analiza la relevancia de cada variable en el modelo:
+
+```{r, include=FALSE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+varImp(caret.xgb)
+
+```  
+
+Evaluación del rendimiento predictivo del modelo Ada Boost presentado con las datos de train (metrica de evaluación utilizada de referencia: “Accuracy”, "Recall", "Precision", "F1" y "ROC", y punto de corte utilizado: 0.5):
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+fcr_train_XGBoost$y_pred_probs2 <- predict(caret.xgb, newdata = fcr_train_XGBoost,
+    type = "prob")
+fcr_train_XGBoost$y_pred_probs2 <- ifelse(fcr_train_XGBoost$y_pred_probs2$`1` >
+    0.5, fcr_train_XGBoost$y_pred_probs2$`1`, 1 - fcr_train_XGBoost$y_pred_probs2$`0`)
+
+fcr_train_XGBoost$y_pred2 <- ifelse(fcr_train_XGBoost$y_pred_probs2 > 0.5, 1,
+    0)
+
+# fcr_train_XGBoost$y_pred_probs2 fcr_train_XGBoost$y_pred2 fcr_train_XGBoost
+```
+
+Reproducimos la matriz de confusión y las métricas de evaluación sobre el modelo final de Decision Tree obtenido:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+cm_train_xgb <- confusionMatrix(as.factor(fcr_train_XGBoost$y_pred2), as.factor(fcr_train_XGBoost$loan_status),
+    positive = "1")
+cm_train_xgb$table
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+accuracy_modelo_xgb_tune <- cm_train_xgb$overall["Accuracy"] %>%
+    round(4)
+accuracy_modelo_xgb_tune
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+recall_modelo_xgb_tune <- cm_train_xgb$byClass["Recall"] %>%
+    round(4)
+recall_modelo_xgb_tune
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+precision_modelo_xgb_tune <- cm_train_xgb$byClass["Precision"] %>%
+    round(4)
+precision_modelo_xgb_tune
+
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+# result
+F1Score_modelo_xgb_tune <- (2*(precision_modelo_xgb_tune * recall_modelo_xgb_tune) / (precision_modelo_xgb_tune + recall_modelo_xgb_tune)) %>%
+    round(4)
+F1Score_modelo_xgb_tune
+
+```
+
+Reproducimos la curva ROC sobre el modelo final de XGBoost obtenido:
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+roc_xgb <- plot.roc(as.numeric(fcr_train_XGBoost$loan_status), as.numeric(fcr_train_XGBoost$y_pred_probs2),
+    col = "purple")
+```
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+auc(roc_xgb)
+
+```
+
+Se obtiene alrededor de un 96.54% de área bajo la curva.
+
+# *COMPARACIÓN DE LAS TÉCNICAS Y MODELOS DE MACHINE LEARNING*
+
+
+
+
 
 
 
