@@ -12,7 +12,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-###
+
 ```
 
 # *INICIO DEL DESARROLLO DEL TRABAJO*
@@ -171,7 +171,7 @@ fin_credrisk$cb_person_default_on_file = as.factor(gsub("\\$",
 
 ```
 
-Vemos que con el cambio tenemos en el dataset variables de tipo numéricas y categóricas
+Vemos que con el cambio tenemos en el dataset variables de tipo numéricas y categóricas o factor
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 str(fin_credrisk)
@@ -803,6 +803,7 @@ En este último gráfico se compara el riesgo de crédito con tres variables con
 En esta parte del trabajo, se trata de aplicar diferentes técnicas y algoritmos sobre nuestros datos, de forma que nos lleven a la mejor predición y clasificación posible de la calidad del vino analizado. Para la comparación y selección del mejor algoritmo utilizaremos como métricas de evaluación: “Accuracy”, "Precision", "Recall" y "F1 Score", y trataremos de establecer el mejor punto de corte posible que maximice la misma.
 
 En este apartado se analizan diferentes algoritmos supervisados (aprendizaje supervisado, con datos etiquetados para su predicción o clasificación) sobre nuestro conjunto de datos sobre créditos bancarios.
+
 
 # 7. GLM - Generalized Lineal Model
 
@@ -2024,19 +2025,18 @@ Realizando la comprobación del modelo con los datos de test al final del análi
 
 * **Métrica de evaluación y punto de corte:*
 
-La métrica de evaluación y comparación entre modelos finalmente elegida ha sido el “Accuracy” (se busca con el presente trabajar predecir cuando un vino está aprobado y es bebible, y cuando, por el contrario, está suspenso y se debe tratar de evitar su recomendación o consumo), estableciendo el punto de corte en 0.5 (se han realizado pruebas con puntos de corte de 0.3, 0.5, 0.6, 0.7 y 0.8, y los mejores resultados obtenidos, los cuales maximizan nuestra métrica de evaluación, han sido con el punto de corte en 0.5).
+
 
 * **Ajuste de Hiperparámetros y Validación cruzada (Tuning y Cross Validation):**
 
-Siempre que ha sido posible se ha aplicado a los diferentes modelo un ajuste de los hiperparámetros para asegurar la optima configuración del algoritmo que asegure su comparabilidad, y se ha realizado una comprobación de la generalización del modelo mediente la técnica de Cross Validation (con 5 folds) para asegurar de esa forma su robustez.
+
 
 * **Comparativa entre modelos:**
 
-Se han realizado diferentes análisis y pruebas con los distintos algoritmos propuestos en la rúbrica de la asignatura consiguiendo resultados aceptables con la mayoría de ellos. Los que se han mostrado como más precisos y sencillos de implementar con nuestros datos han sido lo de clasificación con árboles de decisión, random forest y métodos de ensamble basados en los mismos.
+
 
 * **Resultados finales del análisis:**
 
-Finalmente se ha decidio optar por los algoritmos de Random Forest (algoritmo incluido en la rúbrica) y XG Boost (algoritmo no incluido en la rúbrica) como los modelos elegido como mejores. Ambos han sido comprobados con los datos de test al final del análisis y se han mostrado como modelos generalizables, robustos y con resultados relativamente similares tanto en train como en test, siendo esto un resultado final del trabajo positivo.
 
 
 

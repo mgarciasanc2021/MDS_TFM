@@ -11,7 +11,7 @@
 
 <meta name="author" content="Miguel García Sánchez" />
 
-<meta name="date" content="2023-03-13" />
+<meta name="date" content="2023-04-18" />
 
 <title>URJC MDS TFM - Financial Credit Risk</title>
 
@@ -1575,7 +1575,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">URJC MDS TFM - Financial Credit Risk</h1>
 <h4 class="author">Miguel García Sánchez</h4>
-<h4 class="date">2023-03-13</h4>
+<h4 class="date">2023-04-18</h4>
 
 </div>
 
@@ -1834,7 +1834,7 @@ fin_credrisk$loan_grade = as.factor(gsub(&quot;\\$&quot;, &quot;&quot;, fin_cred
 fin_credrisk$cb_person_default_on_file = as.factor(gsub(&quot;\\$&quot;,
     &quot;&quot;, fin_credrisk$cb_person_default_on_file))</code></pre>
 <p>Vemos que con el cambio tenemos en el dataset variables de tipo
-numéricas y categóricas</p>
+numéricas y categóricas o factor</p>
 <pre class="r"><code>str(fin_credrisk)</code></pre>
 <pre><code>## spc_tbl_ [32,581 × 12] (S3: spec_tbl_df/tbl_df/tbl/data.frame)
 ##  $ person_age                : num [1:32581] 22 21 25 23 24 21 26 24 24 21 ...
@@ -6511,45 +6511,12 @@ siendo esto un resultado final del trabajo positivo.</p>
 <div id="conclusiones-generales-del-estudio" class="section level1">
 <h1>14. Conclusiones generales del estudio</h1>
 <ul>
-<li>**Métrica de evaluación y punto de corte:*</li>
+<li><p>**Métrica de evaluación y punto de corte:*</p></li>
+<li><p><strong>Ajuste de Hiperparámetros y Validación cruzada (Tuning y
+Cross Validation):</strong></p></li>
+<li><p><strong>Comparativa entre modelos:</strong></p></li>
+<li><p><strong>Resultados finales del análisis:</strong></p></li>
 </ul>
-<p>La métrica de evaluación y comparación entre modelos finalmente
-elegida ha sido el “Accuracy” (se busca con el presente trabajar
-predecir cuando un vino está aprobado y es bebible, y cuando, por el
-contrario, está suspenso y se debe tratar de evitar su recomendación o
-consumo), estableciendo el punto de corte en 0.5 (se han realizado
-pruebas con puntos de corte de 0.3, 0.5, 0.6, 0.7 y 0.8, y los mejores
-resultados obtenidos, los cuales maximizan nuestra métrica de
-evaluación, han sido con el punto de corte en 0.5).</p>
-<ul>
-<li><strong>Ajuste de Hiperparámetros y Validación cruzada (Tuning y
-Cross Validation):</strong></li>
-</ul>
-<p>Siempre que ha sido posible se ha aplicado a los diferentes modelo un
-ajuste de los hiperparámetros para asegurar la optima configuración del
-algoritmo que asegure su comparabilidad, y se ha realizado una
-comprobación de la generalización del modelo mediente la técnica de
-Cross Validation (con 5 folds) para asegurar de esa forma su
-robustez.</p>
-<ul>
-<li><strong>Comparativa entre modelos:</strong></li>
-</ul>
-<p>Se han realizado diferentes análisis y pruebas con los distintos
-algoritmos propuestos en la rúbrica de la asignatura consiguiendo
-resultados aceptables con la mayoría de ellos. Los que se han mostrado
-como más precisos y sencillos de implementar con nuestros datos han sido
-lo de clasificación con árboles de decisión, random forest y métodos de
-ensamble basados en los mismos.</p>
-<ul>
-<li><strong>Resultados finales del análisis:</strong></li>
-</ul>
-<p>Finalmente se ha decidio optar por los algoritmos de Random Forest
-(algoritmo incluido en la rúbrica) y XG Boost (algoritmo no incluido en
-la rúbrica) como los modelos elegido como mejores. Ambos han sido
-comprobados con los datos de test al final del análisis y se han
-mostrado como modelos generalizables, robustos y con resultados
-relativamente similares tanto en train como en test, siendo esto un
-resultado final del trabajo positivo.</p>
 </div>
 
 
