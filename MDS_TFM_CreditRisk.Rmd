@@ -1892,7 +1892,7 @@ Con los datos obtenidos, el mejor que mejores resultados da es el de XGBoost.
 
 # *VALIDACIÓN DE LOS RESULTADOS*
 
-# 13. Comprobación delos resultados con los datos de test
+# 13. Comprobación de los resultados con los datos de test
 
 ## 13.1. Cambios, modificaciones y transformaciones sobre el dataset de test
 
@@ -2023,7 +2023,7 @@ Realizando la comprobación del modelo con los datos de test al final del análi
 
 # 14. Conclusiones generales del estudio
 
-* **Métrica de evaluación y punto de corte:*
+* **Métrica de evaluación y punto de corte:**
 
 
 
