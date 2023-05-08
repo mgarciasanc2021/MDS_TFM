@@ -1888,7 +1888,7 @@ plot(perf.xgb, add = TRUE, col = "purple", lwd = 2)
 
 ```
 
-Con los datos obtenidos, el mejor que mejores resultados da es el de XGBoost.
+Con los datos obtenidos, el algoritmo que mejores resultados ha arrojado es el de XGBoost, y será el que utilicemos en la posterior validación de los resultado.
 
 # *VALIDACIÓN DE LOS RESULTADOS*
 
