@@ -19,7 +19,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # 1. Introducción 
 
-El trabajo a desarrollar consiste en el análisis de un dataset relativo a datos de préstamos de entidades financieras, donde se quiere tratar de comprender cuales son las razones y características que llevan al llamado "default" o situación de impago, así como modelos que pueden ayudar a predecirlo.
+El trabajo a desarrollar consiste en el análisis de un dataset relativo a datos de préstamos de entidades financieras, donde se quiere tratar de comprender cuales son las razones y características que llevan al llamado "default" o situación de impago, así como modelos que pueden ayudar a predecirlo y realizar un seguimiento sobre el mismo.
 
 ## 1.1. Desarrollo, programación y control de versiones
 
@@ -29,6 +29,8 @@ Se ha elegido para el desarrollo de una parte del trabajo el lenguaje de program
 https://github.com/mgarciasanc2021/MDS_TFM
 
 ## 1.2. Paquetes R
+
+Los paquetes de R utilizados para el desarrollo del código han sido los siguientes:
 
 ```{r librerias, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 library(formatR)
@@ -54,7 +56,6 @@ library(ggthemes)
 library(tidyverse)
 library(tibble)
 library(gridExtra)
-#library(ggbiplot)
 library(factoextra)
 library(caret)
 library(ISLR)
@@ -73,24 +74,22 @@ library(xgboost)
 library(randomForest)
 library(kernlab)
 library(pROC)
-#library(doMC)
 library(ggpubr)
 library(ROCR)
-#library(ggextra)
 
 ```
 
 # 2. Conjunto de datos
 
-El conjunto de datos elegido para el desarrollo del trabajo es "Credit Risk Dataset". Este dataset incluye información de clientes y préstamos contratados por estos en diferentes instituciones financiera.
+El conjunto de datos elegido para el desarrollo del trabajo es "Credit Risk Dataset". Este dataset incluye información de clientes de banca retail y préstamos contratados por estos en diferentes instituciones financiera.
 
 **Link del data set:** <https://www.kaggle.com/datasets/laotse/credit-risk-dataset>.
 
 ## 2.1. Carga de los datos
 
-El conjunto de datos "Credit Risk Dataset" contiene 12 columnas y 32.581 filas y lo obtenemos en formato .CSV. 
+El conjunto de datos "Credit Risk Dataset" contiene 12 columnas y 32.581 filas y se obtiene en formato .CSV. 
 
-Inicialmente se han guardado los datos en un data frame llamado "fin_credrisk" y se ha realizado un estudio inicial sobre su contenido utilizando la función head y summary.
+Inicialmente se han guardado los datos en un data frame llamado "fin_credrisk" y se ha realizado un estudio preliminar sobre su contenido utilizando la función head y count.
 
 ```{r cargas datos, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 fin_credrisk<- read_csv("financial_credit_risk.csv")
@@ -99,21 +98,9 @@ count(fin_credrisk)
 
 ```
 
-```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
-summary(fin_credrisk)
-
-```
-
-Sacando estos datos vemos algunas cosas importantes a comentar:
-
-* La variable "person_age" tiene un valor máximo de 144 años.
-* La variable "person_emp_length" tiene un valor máximo de 123 años.
-* La variable "person_emp_length" tiene 895 registros con NAs.
-* La variable "loan_interest_rate" tiene 3.116 registros con NAs.
-
 ## 2.2. Definición de las variables
 
-Empezando ya el análisis inicial del conjunto de datos que tenemos, vemos que las 12 variables que componen los datos pueden ser descritas como:
+Empezando ya el análisis inicial del dataset que tenemos, se ve que las 12 variables que componen los datos pueden ser descritas como:
 
 **Input variables o Variables de entrada/predictoras:**
 
@@ -133,9 +120,26 @@ Empezando ya el análisis inicial del conjunto de datos que tenemos, vemos que l
 
 * **loan_status:** Estado actual del crédito (suponiendo "1" como impagado o situación de default, y "0" no impagado)
 
+Se analiza de forma preliminar estas variables utilizando la función summary.
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+summary(fin_credrisk)
+
+```
+
+Sacando estos datos, se ven algunos resultados importantes a comentar, que posteriormente deberan ser analizados en mayor detalle y tratados:
+
+* La variable "person_age" tiene un valor máximo de 144 años.
+* La variable "person_emp_length" tiene un valor máximo de 123 años.
+* La variable "person_emp_length" tiene 895 registros con NAs.
+* La variable "loan_interest_rate" tiene 3.116 registros con NAs.
+
+
 ## 2.3. Objetivo del análisis
 
-El objetivo final del proyecto es conseguir llegar a un modelo que permita predecir el riesgo de impago o "default" que puede tener en cartera una institución financiera y saber si estamos ante créditos que van a poder ser devueltos por el cliente, o por si el contrario se van a quedar como impagados.
+El objetivo final del proyecto es conseguir llegar a un modelo que permita predecir el riesgo de impago o "default" que puede tener en cartera una institución financiera. 
+
+De esta forma, se optimiza la fase de concesión de créditos y seguimiento del riesgo de crédito, logrando diferenciar si estamos ante créditos que van a poder ser devueltos por el cliente, o por si el contrario se van a quedar potencialmente como impagados y es conveniente aplicar de forma anticipada medidas preventivas de cara a la posible fase de recuperación del crédito.
 
 # *ANÁLISIS INICIAL, LIMPIEZA Y PARTICIONADO DE LOS DATOS*
 
@@ -143,11 +147,11 @@ El objetivo final del proyecto es conseguir llegar a un modelo que permita prede
 
 ## 3.1. Cambio de nombres de las columnas
 
-Se ha decidido no realizar un cambio en el nombre de las variables que aparecen en las columnas de los datos, ya que ya se sigue un patrón de nombre sin espaciones y así no tendremos problemas con ello a futuro.
+Se ha decidido no realizar un cambio en el nombre de las variables que aparecen en las columnas de los datos, ya que ya se sigue un patrón de nombre sin espaciones y así no habrá problemas con ello en el desarrollo del trabajo.
 
 ## 3.2. Cambio de tipo de variable de las columnas
 
-Vemos que en el dataset tenemos variables de tipo numéricas (num - col_double()) y de tipo texto o cadena de caractéres (chr - col_character()).
+Vemos que en el dataset existen variables de tipo numéricas (num - col_double()) y de tipo texto o cadena de caractéres (chr - col_character()).
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 str(fin_credrisk)
@@ -171,20 +175,20 @@ fin_credrisk$cb_person_default_on_file = as.factor(gsub("\\$",
 
 ```
 
-Vemos que con el cambio tenemos en el dataset variables de tipo numéricas y categóricas o factor
+Vemos que con el cambio tenemos en el dataset variables de tipo numéricas y categóricas o de tipo factor.
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 str(fin_credrisk)
 
 ```
 
-Cabría la posibilidad de tratar de transformar la variable "loan_status"en categórica en función de si estamos ante préstamos de crédito impagados ("default") o no.
+Cabría la posibilidad de tratar de transformar la variable "loan_status" en categórica en función de si estamos ante préstamos de crédito impagados ("default") o no.
 
 # 4. Análisis preliminar del conjunto de datos
 
 ## 4.1. Análisis de datos faltantes
 
-Analizamos en mayor profundidad lo detectado anteriomente respecto a datos faltantes en el dataset:
+Se pasa ahora a analizar en mayor profundidad lo detectado anteriomente respecto a datos faltantes en el dataset:
 
 * La variable "person_emp_length" tiene 895 registros con NAs.
 * La variable "loan_interest_rate" tiene 3.116 registros con NAs.
@@ -205,7 +209,7 @@ missmap(fin_credrisk, main="Missing Map")
 
 ### 4.1.2. Tratamiento e imputación de datos faltantes
 
-Para la imputación de datos faltantes en las columnas "person_emp_length" y "loan_int_rate", se ha decidido reemplazar todos sus NAs según los valores medianos de las mismas variables a las que se referencian.
+Para realizar la imputación de datos faltantes en las columnas "person_emp_length" y "loan_int_rate", se ha decidido reemplazar todos sus NAs según los valores medianos de las mismas variables a las que se referencian.
 
 Con la función summary se comprueba que ya no hay más datos faltantes en el data set.
 
@@ -219,7 +223,7 @@ summary(fin_credrisk)
 
 ## 4.2. Análisis de datos atípico o outliers
 
-Analizamos en mayor profundidad lo detectado anteriomente respecto a datos atípico en el dataset:
+Se pasa a realizar un análisis en mayor profundidad de lo detectado anteriomente respecto a datos atípico en el dataset:
 
 * La variable "person_age" tiene un valor máximo de 144 años.
 * La variable "person_emp_length" tiene un valor máximo de 123 años.
@@ -233,7 +237,7 @@ Vemos como hay algunos datos que si podemos considerar atípico. Hay dos registr
 
 ### 4.2.2. Tratamiento y eliminación de datos atípicos o outliers
 
-Estos caso comentados son raros e ilógicos, y optamos finalmente por eliminarlos del dataset.
+Estos caso comentados son raros e ilógicos, y se opta finalmente por eliminarlos del dataset.
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 fin_credrisk <- fin_credrisk %>%
@@ -243,7 +247,7 @@ fin_credrisk <- fin_credrisk %>%
 ```
 
 
-Mostramos el resultado de como queda ahora el dataset con esta modificación. Ya no tenemos ni atípico ni datos faltantes en el dataset. Ahora el dateset mantiene las 12 columnas, pero pasamos a tener 32.574 filas o registros.
+Se muestra el resultado de como queda ahora el dataset con esta modificación. Ya no existen ni atípicos ni datos faltantes en el dataset. Ahora el dateset mantiene las 12 columnas, pero pasamos a tener 32.574 filas o registros.
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 summary(fin_credrisk)
@@ -262,9 +266,9 @@ plot(fin_credrisk$person_age, fin_credrisk$person_emp_length)
 
 # 5. Partición del conjunto de datos: data set training y data set test
 
-Una vez vistos por encima la estructura general de los datos, pasamos a dividir el conjunto de datos en dos para diferenciar los que usaremos de entrenamiento de los que usaremos de test (viendo la cantidad de datos de la que disponemos, la distribución elegida ha sido: 20% test y 80% training). Establecemos una semilla que nos guarde de forma permanente la división que hacemos para que la distribución de los datos sea siempre la misma.
+Una vez vista por encima la estructura general de los datos, se procede a dividir el conjunto de datos en dos para diferenciar los que se usarán de entrenamiento de los que usarán de test (viendo la cantidad de datos de la que disponemos, la distribución elegida ha sido: 20% test y 80% training). Además, se establece una semilla que guarde de forma permanente la división realizada para que la distribución de los datos sea siempre la misma y no sufra variaciones.
 
-Guardamos además la partición de datos de test para ser utilizada a futuro para la validación del modelo final y pasamos a trabajar de aquí en adelante con la partición de training.
+Se procede a guardar también la partición de datos de test para ser utilizada a futuro para la validación del modelo final. De aquí en adelante, se pasa a trabajar con la partición de training.
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 set.seed(101)
@@ -283,7 +287,7 @@ fcr_test
 
 ## 6.1. Análisis de la distribución de las variables
 
-Analizamos como se distribuyen las diferentes variables de entrada de nuestro dataset:
+Se analizan como se distribuyen las diferentes variables de entrada del dataset:
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 fcr_train %>%
@@ -317,33 +321,6 @@ grid.arrange(ga, gb, gd, gl)
 
 ```
 
-- Modificamos a logaritmos??
-
-```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
-#fcr_train <- fcr_train %>%
- #   mutate(Log_person_age = log(person_age), Log_person_income = log(person_income),
-  #      Log_person_emp_length = log(person_emp_length), Log_cb_person_cred_hist_length = #log(cb_person_cred_hist_length))
-
-#ga <- fcr_train %>%
-    #ggplot(aes(x = Log_person_age)) + geom_histogram(bins = 20,
-    #fill = "#619CFF")
-
-#gb <- fcr_train %>%
-    #ggplot(aes(x = Log_person_income)) + geom_histogram(bins = 20,
-    #fill = "#E58700") + theme(axis.text.x = element_text(angle = 10, hjust = 0.5, vjust = 0.5))
-
-#gd <- fcr_train %>%
-    #ggplot(aes(x = Log_person_emp_length)) + geom_histogram(bins = 20,
-    #fill = "#FD61D1")
-
-#gl <- fcr_train %>%
-    #ggplot(aes(x = Log_cb_person_cred_hist_length)) + geom_histogram(bins = 20,
-    #fill = "#CDAD00")
-
-#grid.arrange(ga, gb, gd, gl)
-
-```
-
 * **Variables numéricas relativas al préstamo**
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
@@ -360,29 +337,6 @@ gj <- fcr_train %>%
     fill = "#7FFF00")
 
 grid.arrange(gg, gh, gj)
-
-```
-
-- Modificamos a logaritmos??
-
-```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
-#fcr_train <- fcr_train %>%
-    #mutate(Log_loan_amnt = log(loan_amnt), Log_loan_int_rate = log(loan_int_rate),
-       #Log_loan_percent_income = log(loan_percent_income))
-
-#gg <- fcr_train %>%
-    #ggplot(aes(x = Log_loan_amnt)) + geom_histogram(bins = 20,
-    #fill = "#8B2323")
-
-#gh <- fcr_train %>%
-    #ggplot(aes(x = Log_loan_int_rate)) + geom_histogram(bins = 20,
-    #fill = "#00008B")
-
-#gj <- fcr_train %>%
-    #ggplot(aes(x = Log_loan_percent_income)) + geom_histogram(bins = 20,
-    #fill = "#7FFF00")
-
-#grid.arrange(gg, gh, gj)
 
 ```
 
@@ -416,7 +370,7 @@ grid.arrange(ge, gf)
 
 ```
 
-Analizamos como se distribuyen la variable objetivo de nuestro dataset:
+Se analiza como se distribuye la variable objetivo del dataset:
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 ggplot(data = fcr_train) + geom_bar(mapping = aes(x = loan_status, fill = as.factor(loan_status))) +
@@ -433,13 +387,11 @@ prop.table(table(fcr_train$loan_status))
 
 ```
 
-El 78.15% de los registros en nuestro dataset de train (20.365 registros) tiene valor 0 correspondiente a créditos que no han entrado en default, y el 21.85% (5.694 registros) tienen valor 1 correspondiente a créditos que por el contrario si han sido impagados.
+El 78.15% de los registros en el dataset de train (20.365 registros) tiene valor 0 correspondiente a créditos que no han entrado en default, y el 21.85% (5.694 registros) tienen valor 1 correspondiente a créditos que por el contrario si han sido impagados.
 
 ## 6.2. Boxplot - análisis de la variables de relevancia y de los atípicos observados
 
-(LOGARITMOS??)
-
-Analizamos si nuestras variables tienen valores atípicos, cuales son sus valores medios y vemos sus intervalos de confianza, a través de gráficos de tipo Boxplot.
+Se analiza si las variables tienen valores atípicos, cuales son sus valores medios y se ven sus intervalos de confianza, a través de gráficos de tipo Boxplot.
 
 * **Boxplot variable person_age**
 
@@ -518,11 +470,11 @@ BoxPlot_loan_percent_income
 Se aprecia como la variable "loan_percent_income" relativa al porcentaje de lo que supone el préstamo sobre los ingresos anuales en dólares de la persona que toma el crédito, es superior en media en los casos donde se da el impago del crédito.
 
 
-Como conclusión lógica de todo esto, normalmente el la situación de impago es más frecuente en personas con ingresos más bajos, menor número de años de actividad laboral y con préstamos de cantidades más altas y con tipos de interés elevados.
+Como conclusión lógica de todo esto, normalmente el la situación de impago es más frecuente en personas con ingresos más bajos, menor número de años de actividad laboral y con préstamos de cantidades más altas y con tipos de interés más elevados.
 
 ## 6.3. Correlación entre variables
 
-Continuando con en análisis de las distintas variables del data set y el estudio de como se relacionan entre si, queremos ver de forma global como se correlacionan las variables numéricas que nos pueden llegar a servir para el modelo de predicción.
+Continuando con en análisis de las distintas variables del dataset y el estudio de como se relacionan entre si, se quiere analizar de forma global como se correlacionan las variables numéricas que nos pueden llegar a servir para el modelo de predicción objetivo.
 
 ### 6.3.1. Análisis de la correlación global del conjunto de variables
 
@@ -540,11 +492,11 @@ round(res, 2)
 
 ```
 
-Vemos que las variables que más estan correlacionadas con la variable “loan_status” son: “person_income”, “loan_amnt”, “loan_int_rate” y “loan_percent_income”.
+Se aprecia que las variables que más estan correlacionadas con la variable respuesta “loan_status” son: “person_income”, “loan_amnt”, “loan_int_rate” y “loan_percent_income”.
 
 ### 6.3.2. Análisis de la correlación bivariante
 
-Realizamos un análisis bivariante para ver que variables están más correlacionadas, positva o negativamente, entre si.
+Se pasa a realizar un análisis bivariante para ver que variables están más correlacionadas, positiva o negativamente, entre si.
 
 * **Correlación: person_age y cb_person_cred_hist_length:**
 
@@ -644,7 +596,7 @@ fcr_train %>%
 
 ## 6.4. Análisis de las variables categóricas
 
-Se realiza un análisis de las variables categóricas en relación con el resto de variables numéricas del dataset. Se trata de entender las características personales de la gente y su actividad creditica para tratar de sacar un cierto análisis preliminar.
+Se realiza un análisis de las variables categóricas en relación con el resto de variables numéricas del dataset. Se trata de entender las características personales de los clientes de banca retail y su actividad creditica para tratar de sacar un cierto análisis preliminar.
 
 * **Variable cb_person_default_on_file en función de las variables loan_int_rate y person_income:**
 
@@ -671,7 +623,7 @@ ggExtra::ggMarginal(plot1, type = "boxplot")
 
 ```
 
-En base a este gráfico podemos sacar como conclusión que: existe un sesgo en la edad (el dateset tiene más registros de gente joven), existe un sesgo en los ingresos (el dataset no tiene bien balanceada la variable "person_income", estando está desequilibrada y siendo más frecuente los ingresos bajos) y parece que la gente con hipoteca tiene por lo general más ingresos que la gente que vive de alquiler.
+En base a este gráfico se puede sacar como conclusión que: existe un sesgo en la edad (el dateset tiene más registros de gente joven), existe un sesgo en los ingresos (el dataset no tiene bien balanceada la variable "person_income", estando está desequilibrada y siendo más frecuente los ingresos bajos) y parece que la gente con hipoteca tiene por lo general más ingresos que la gente que vive de alquiler.
 
 * **Variable loan_intent en función de las variables loan_amnt y loan_int_rate:**
 
@@ -684,7 +636,7 @@ ggExtra::ggMarginal(plot2, type = "boxplot")
 
 ```
 
-Este segundo gráfico obtenido, representa la relación entre el importe del préstamo solicitado y el tipo de interés aplicado. Aquí podemos ver que no hay una correlación clara entre las dos variables, por lo que podemos decir que no dependen la una de la otra. Además, parece que la intención de préstamo se distribuye por igual en la muestra, lo que significa que la intención no influye en absoluto en los tipos de interés ni en el importe del préstamo. En este caso, las distribuciones son gaussianas normales con un ligero sesgo.
+Este segundo gráfico obtenido, representa la relación entre el importe del préstamo solicitado y el tipo de interés aplicado. Aquí se puede ver que no hay una correlación clara entre las dos variables, por lo que se puede decir que no dependen la una de la otra. Además, parece que la intención de préstamo se distribuye por igual en la muestra, lo que significa que la intención no influye en absoluto en los tipos de interés ni en el importe del préstamo. En este caso, las distribuciones son gaussianas normales con un ligero sesgo.
 
 * **Variable loan_grade en función de las variables loan_amnt y person_income:**
 
@@ -697,7 +649,7 @@ ggExtra::ggMarginal(plot3, type = "boxplot")
 
 ```
 
-En este tercer gráfico obtenido, tampoco existe una relación clara entre los ingresos y el importe del préstamo. Al añadir diferentes colores para las calificaciones de los préstamos, observamos una pequeña tendencia a que las personas con ingresos bajos y con un préstamo elevado tengan una calificación más baja. Pero no se aprecia una relación clara.
+En este tercer gráfico obtenido, tampoco existe una relación clara entre los ingresos y el importe del préstamo. Al añadir diferentes colores para las calificaciones de los préstamos, observamos una pequeña tendencia a que las personas con ingresos bajos y con un préstamo elevado tengan una calificación crediticia más baja. Pero no se aprecia una relación clara.
 
 * **Variable loan_grade en función de las variables person_age y loan_int_rate:**
 
@@ -710,11 +662,11 @@ ggExtra::ggMarginal(plot4, type = "boxplot")
 
 ```
 
-En este cuarto gráfico se muestra la relación entre la edad, el tipo de interés y el grado del préstamo. Aquí podemos ver claramente que la calificación del préstamo depende del tipo de interés, que divide el gráfico en varias secciones. Básicamente dice que cuanto más alto es el tipo de interés, mayor es el riesgo percibido. Esto podría deberse al método de evaluación del grado de riesgo de las personas. Además, observamos que las personas mayores tienden a tener tipos de interés más bajos por término medio que los jóvenes.
+En este cuarto gráfico se muestra la relación entre la edad, el tipo de interés y el grado del préstamo. Aquí se puede ver claramente que la calificación del préstamo depende del tipo de interés, que divide el gráfico en varias secciones. Básicamente se puede apreciar que cuanto más alto es el tipo de interés, mayor es el riesgo percibido. Esto podría deberse al método de evaluación del grado de riesgo de las personas. Además, observamos que las personas mayores tienden a tener tipos de interés más bajos por término medio que los jóvenes.
 
 ## 6.5. Análisis de la variable de interés
 
-Ahora se pasa a analizar nuestra variable de interes "loan_status", para ver la probabilidad de impago de un crédito o préstamo dadas ciertas características en el cliente o en el propio préstamos.
+Ahora se pasa a analizar la variable de interes "loan_status", para ver la probabilidad de impago de un crédito o préstamo dadas ciertas características en el cliente o en el propio préstamos.
 
 * **Variable loan_status en función de las variables loan_percent_income y loan_int_rate:**
 
@@ -729,7 +681,7 @@ ggExtra::ggMarginal(plot5, type = "boxplot")
 
 En este gráfico se vuelve a considerar el nivel de los tipos de interés, en relación con la proporción entre el importe del préstamo y los ingresos. La forma de los puntos sugiere que no hay una relación clara entre estas dos variables, lo que significa que los tipos de interés no dependen en absoluto del porcentaje de ingresos del préstamo. Sin embargo, cuanto más nos acercamos a un ratio más alto, más bajos son los tipos de interés.
 
-Si analizamos a las personas que han impagado (en rojo) y a las personas que no han impagado (en verde), podemos ver claramente niveles de umbral hacia el 12% para los tipos de interés, y 0,3 para la variable de ingresos porcentuales del préstamo. Esta zona podría considerarse menos arriesgada tanto para los prestamistas como para los prestatarios. Esto parece razonable, ya que unos tipos de interés más altos y una mayor relación ingresos/préstamo significa que es menos probable que la gente reembolse su deuda.Es decir, a mayor nivel de tipo de interés del préstamos y un mayor nivel de endeudamiento en relación a los ingresos, es más probable que un cliente de una entidad bancaria termine por impagar su deuda.
+Si analizamos a las personas que han impagado (en rojo) y a las personas que no han impagado (en verde), podemos ver claramente niveles de umbral hacia el 12% para los tipos de interés, y 0,3 para la variable de ingresos porcentuales del préstamo. Esta zona podría considerarse menos arriesgada tanto para los prestamistas como para los prestatarios. Esto parece razonable, ya que unos tipos de interés más altos y una mayor relación ingresos/préstamo significa que es menos probable que la gente reembolse su deuda.Es decir, a mayor nivel de tipo de interés del préstamos y un mayor nivel de endeudamiento en relación a los ingresos, es más probable que un cliente de una entidad bancaria termine por impagar su deuda y entrar en default.
 
 * **Variable loan_status en función de la variable person_home_ownership:**
 
@@ -771,7 +723,7 @@ ggplot(fcr_train, aes(x = factor(loan_status), fill = factor(loan_grade))) +
 
 ```
 
-Utilizando de nuevo la paleta de colores para el grado de riesgo, es posible observar que esta variable tiene cierto poder predictivo de los impagos de los tomadores de crédito. Según los datos, cuando el grado de riesgo es más bajo (calificación crediticia "A"), es menos probable que se produzca un impago. Lo contrario ocurre con los grados inferiores ("D", "E", "F" y "G")..
+Utilizando de nuevo la paleta de colores para el grado de riesgo, es posible observar que esta variable tiene cierto poder predictivo de los impagos de los tomadores de crédito. Según los datos, cuando el grado de riesgo (scoring asignado a cada cliente en función del riesgo) es más bajo (calificación crediticia "A"), es menos probable que se produzca un impago. Lo contrario ocurre con los grados inferiores ("D", "E", "F" y "G").
 
 * **Variable loan_status en función de las variables loan_int_rate, person_income y loan_amnt:**
 
@@ -800,7 +752,7 @@ En este último gráfico se compara el riesgo de crédito con tres variables con
 
 # *APLICACIÓN DE LAS TÉCNICAS Y MODELOS DE MACHINE LEARNING*
 
-En esta parte del trabajo, se trata de aplicar diferentes técnicas y algoritmos sobre nuestros datos, de forma que nos lleven a la mejor predición y clasificación posible de la calidad del vino analizado. Para la comparación y selección del mejor algoritmo utilizaremos como métricas de evaluación: “Accuracy”, "Precision", "Recall" y "F1 Score", y trataremos de establecer el mejor punto de corte posible que maximice la misma.
+En esta parte del trabajo, se trata de aplicar diferentes técnicas y algoritmos sobre los datos, de forma que se pueda llegar a la mejor predición y clasificación posible del riesgo de crédito. Para la comparación y selección del mejor algoritmo utilizaremos como métricas de evaluación: “Accuracy”, "Precision", "Recall" y "F1 Score", así como la "curva ROC", y trataremos de establecer el mejor punto de corte posible que maximice la misma.
 
 En este apartado se analizan diferentes algoritmos supervisados (aprendizaje supervisado, con datos etiquetados para su predicción o clasificación) sobre nuestro conjunto de datos sobre créditos bancarios.
 
@@ -831,7 +783,7 @@ str(fcr_train_glm)
 
 ```
 
-Analizando la distinción entre créditos impagados y no impagados, vemos que la distibución entre ambos grupos está poco balanceada, con 20.365 no impagados (78.15%) y 5.694 (21.85%) impagados en los datos de train.
+Analizando la distinción entre créditos impagados y no impagados, se puede ver que la distibución entre ambos grupos está poco balanceada, con 20.365 no impagados (78.15%) y 5.694 (21.85%) impagados en los datos de train.
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 corrplot(cor(fcr_train_glm %>%
@@ -847,7 +799,7 @@ round(res, 2)
 
 ```
 
-Analizamos de forma bivariante las variables:
+Se procede a analizar de forma bivariante las variables:
 
 * **Variable loan_int_rate**
 
@@ -865,7 +817,7 @@ fcr_train_glm %>%
 
 ```
 
-En términos generales vemos como los créditos analizados que estan en la categoria de impagados, tienen en general un mayor valor de “loan_int_rate” y de "loan_percent_income".
+En términos generales vemos como los créditos analizados que están en la categoría de impagados, tienen en general un mayor valor de “loan_int_rate” y de "loan_percent_income".
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 fcr_train_glm %>%
@@ -909,7 +861,7 @@ En los casos de las variables “cb_person_cred_hist_length”, “loan_amnt”,
 
 ## 7.2. Creación del modelo de Regresión Logística
 
-Generamos un modelo de regresión logística en base a las variables de nuestro dataset que sirva como predictor de la variable binaria creada.
+Se genera un modelo de regresión logística en base a las variables de nuestro dataset que sirva como predictor de la variable binaria creada.
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 modelo_glm <- glm(loan_status ~ ., data = fcr_train_glm, family = binomial(link = 'logit'))
@@ -1054,13 +1006,13 @@ F1Score_modelo_glm2
 
 Viendo el valor de las metricas obtenidas (con un punto de corte en 0.5), el valor de Accuracy (número de predicciones correctas/número total de predicciones) se situa en el 87%, el de Precision (positivos verdaderos/(positivos verdaderos + falsos positivos)) se situa en un 77%, el de Recall o Sensitividad (positivos verdaderos/(positivos verdaderos/falsos negativos)) en un 56% y el F1 Score (considerado como una media armónica que combina los valores de la precisión o precision y de la exhaustividad o recall) en un 65%.
 
-Con estos datos entendemos que con el modelo desarrollado, en alrededor del 87% de los casos este será capaz de predecir si un crédito va a ser impagado o no.
+Con estos datos se entiende que con el modelo desarrollado, en alrededor del 87% de los casos este será capaz de predecir si un crédito va a ser impagado o no.
 
 ## 7.3. GLM - Cross Validation, Hiperparámetros y Evaluación del modelo
 
 Una vez desarrollado el modelo, se trata de aplicar Cross Validation sobre el modelo de GLM y realizar una selección de hiperparámetros (se busca tener un modelo robusto, generalizable y comparable con el resto para la posterior selección del mejor):
 
-Vemos primero cuales son las posibles variables que tienes el modelo para tratar de configurar. Cómo se puede ver, el modelo GLM no tiene la posibilidad de ajustar hiperparámetros.
+Primero se analizan cuales son las posibles variables que tienes el modelo para tratar de configurar. Cómo se puede ver, el modelo GLM no tiene la posibilidad de ajustar hiperparámetros.
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 ## https://machinelearningmastery.com/how-to-estimate-model-accuracy-in-r-using-the-caret-package/?msclkid=37e9f222aa8711ec9c857e7c4b89d202
@@ -1072,7 +1024,7 @@ modelLookup("glm")
 
 ```
 
-Creamos el modelo con las variables seleccionadas como relevantes y haciendo Cross Validation on 5 particiones del dataset de train.
+Se crea el modelo con las variables seleccionadas como relevantes y haciendo Cross Validation on 5 particiones del dataset de train.
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 caret.glm <- train(as.factor(loan_status) ~ person_income + person_emp_length +
@@ -1091,7 +1043,7 @@ summary(caret.glm)
 
 ```
 
-Con estos datos entendemos que con el modelo desarrollado, en alrededor del 86/87% de los casos este será capaz de predecir si un crédito va a ser impagado o no.
+Con estos datos se puede entender que con el modelo desarrollado, en alrededor del 86/87% de los casos este será capaz de predecir si un crédito va a ser impagado o no.
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 confusionMatrix(caret.glm)
@@ -1111,7 +1063,7 @@ fcr_train_glm$y_pred2 <- ifelse(fcr_train_glm$y_pred_probs2 > 0.5, 1,
 
 ```
 
-Reproducimos la matriz de confusión y las métricas de evaluación sobre el modelo final de GLM obtenido:
+Se reproduce la matriz de confusión y las métricas de evaluación sobre el modelo final de GLM obtenido:
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 cm_train2 <- confusionMatrix(as.factor(fcr_train_glm$y_pred2), as.factor(fcr_train_glm$loan_status),
@@ -1152,7 +1104,7 @@ F1Score_modelo_glm2_tune
 
 ```
 
-Reproducimos la curva ROC sobre el modelo final de GLM obtenido:
+Se reproduce la curva ROC sobre el modelo final de GLM obtenido:
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 roc_glm <- plot.roc(as.numeric(fcr_train_glm$loan_status), as.numeric(fcr_train_glm$y_pred_probs2),
@@ -1194,7 +1146,7 @@ tree
 
 ```
 
-Analizamos los resultados obtenidos de forma numérica:
+Se analizan los resultados obtenidos de forma numérica:
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 rpart.rules(tree, style = "tall")
@@ -1235,7 +1187,7 @@ printcp(tree)
 
 ```
 
-Finalmente decimos proceder a realizar la poda y crear un modelo alternativo más simplificado:
+Finalmente se decide proceder a realizar la poda y crear un modelo alternativo más simplificado y con menor sobreajuste:
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 xerror <- tree$cptable[, "xerror"]
@@ -1277,13 +1229,13 @@ caret::confusionMatrix(pred_tree2, obs_tree2)
 
 ```
 
-Aplicando la poda a nuestro árbol obtenemos un modelo mas limpio, simple, explicativo y generalizable a otro conjunto de datos, evitando el posible sobreajuste del modelo y solo reduciendo su capacidad predictora a un valor de precisión del 93.08%. Entendemos que este modelo podado será el óptimo en este caso.
+Aplicando la poda a nuestro árbol se ontiene un modelo mas limpio, simple, explicativo y generalizable a otro conjunto de datos, evitando el posible sobreajuste del modelo y solo reduciendo su capacidad predictora a un valor de precisión del 93.08%. Se entiende por lo tanto que este modelo podado será el óptimo en este caso.
 
 ## 8.1. DECISION TREE - Cross Validation, Hiperparámetros y Evaluación del modelo
 
-Tratamos de aplicar Cross Validation sobre el modelo de árbol de decisión y realizar una selección de hiperparámetros (se busca tener un modelo robusto, generalizable y comparable con el resto para la posterior selección del mejor):
+Se trata de aplicar Cross Validation sobre el modelo de árbol de decisión y realizar una selección de hiperparámetros (se busca tener un modelo robusto, generalizable y comparable con el resto para la posterior selección del mejor):
 
-De cara a obtener el mejor modelo posible realizaremos validación cruzada de 5 folds y trataremos de ajustar hiperparámetros (el “cp” óptimo para un modelo ya validado). Utilizamos además las variables que hemos vito como más representativas y explicativas de la variable respuesta “loan_status”.
+De cara a obtener el mejor modelo posible se realizará validación cruzada de 5 folds y se tratará de ajustar hiperparámetros (el “cp” óptimo para un modelo ya validado). Se utiliza además las variables que hemos vito como más representativas y explicativas de la variable respuesta “loan_status”.
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 # Fit the model on the training set
@@ -1333,7 +1285,7 @@ get_best_result(caret.tree)
 
 ```
 
-Obtenemos finalmente haciendo validación cruzada una precisión del 92/93%, con un modelo que ha sido comprobado como robusto y generalizable para funcionar previsiblemente en otro conjunto de datos diferente.
+Se obtiene finalmente haciendo validación cruzada una precisión del 92/93%, con un modelo que ha sido comprobado como robusto y generalizable para funcionar previsiblemente en otro conjunto de datos diferente.
 
 Evaluación del rendimiento predictivo del modelo Decision Tree presentado con las datos de train (metrica de evaluación utilizada de referencia: “Accuracy”, "Recall", "Precision", "F1" y "ROC", y punto de corte utilizado: 0.5):
 
@@ -1349,7 +1301,7 @@ fcr_train_tree$y_pred2 <- ifelse(fcr_train_tree$y_pred_probs2 > 0.5,
 # fcr_train_tree$y_pred_probs2 fcr_train_tree$y_pred2
 ```
 
-Reproducimos la matriz de confusión y las métricas de evaluación sobre el modelo final de Decision Tree obtenido:
+Se reproduce la matriz de confusión y las métricas de evaluación sobre el modelo final de Decision Tree obtenido:
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 cm_train_tree <- confusionMatrix(as.factor(fcr_train_tree$y_pred2),
@@ -1389,7 +1341,7 @@ F1Score_modelo_tree_tune
 
 ```
 
-Reproducimos la curva ROC sobre el modelo final de árbol de decisión obtenido:
+Se reproduce la curva ROC sobre el modelo final de árbol de decisión obtenido:
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 roc_tree <- plot.roc(as.numeric(fcr_train_tree$loan_status), as.numeric(fcr_train_tree$y_pred_probs2),
@@ -1413,7 +1365,7 @@ fcr_train_forest
 
 ```
 
-Creamos el modelo base de random forest realizando una simulación con 1000 árboles:
+Se crea el modelo base de random forest realizando una simulación con 1000 árboles:
 
 ```{r, include=TRUE, message=FALSE, include=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 set.seed(4343)
@@ -1422,7 +1374,7 @@ rf
 
 ```  
 
-Examinamos la convergencia del error en las muestras:
+Se examina la convergencia del error en las muestras:
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 plot(rf,main="")
@@ -1430,7 +1382,7 @@ legend("right", colnames(rf$err.rate), lty = 1:5, col = 1:6)
 
 ```
 
-Vemos la relevancia de las variables en el modelo:
+Se analiza la relevancia de las variables en el modelo:
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 varImpPlot(rf)
@@ -1439,7 +1391,7 @@ varImpPlot(rf)
 
 ## 9.1. RANDOM FOREST - Cross Validation, Hiperparámetros y Evaluación del modelo
 
-Tratamos de aplicar Cross Validation sobre el modelo de random forest y realizar una selección de hiperparámetros (se busca tener un modelo robusto, generalizable y comparable con el resto para la posterior selección del mejor):
+Se trata de aplicar Cross Validation sobre el modelo de random forest y realizar una selección de hiperparámetros (se busca tener un modelo robusto, generalizable y comparable con el resto para la posterior selección del mejor):
 
 Vemos que el principal parámetro a configurar es el número de predictores al azar que toma el modelo.
 
@@ -1448,7 +1400,7 @@ modelLookup("rf")
 
 ```
 
-Creamos un modelo aplicando la validación cruzada y ajustando hiperparámetros (mtry, número de árboles y el tamaño de los nodos para regular su profundidad) de tal forma que creemos un modelo robusto y generalizable. Tomamos como base las variables de mayor relevancia que hemos observado:
+Se crea un modelo aplicando la validación cruzada y ajustando hiperparámetros (mtry, número de árboles y el tamaño de los nodos para regular su profundidad) de tal forma que creemos un modelo robusto y generalizable. Se toma como base las variables de mayor relevancia que hemos observado:
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 # Fit the model on the training set
@@ -1499,7 +1451,7 @@ fcr_train_forest$y_pred2 <- ifelse(fcr_train_forest$y_pred_probs2 > 0.5,
 # fcr_train_forest
 ```
 
-Reproducimos la matriz de confusión y las métricas de evaluación sobre el modelo final de Decision Tree obtenido:
+Se reproduce la matriz de confusión y las métricas de evaluación sobre el modelo final de Decision Tree obtenido:
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 cm_train_forest <- confusionMatrix(as.factor(fcr_train_forest$y_pred2),
@@ -1540,7 +1492,7 @@ F1Score_modelo_forest_tune
 
 ```
 
-Reproducimos la curva ROC sobre el modelo final de random forest obtenido:
+Se reproduce la curva ROC sobre el modelo final de random forest obtenido:
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 roc_forest <- plot.roc(as.numeric(fcr_train_forest$loan_status), as.numeric(fcr_train_forest$y_pred_probs2),
@@ -1564,7 +1516,7 @@ fcr_train_ADABoost
 
 ```
 
-Creamos el modelo de boosting con una configuración inicial básica de parámetros:
+Se crea el modelo de boosting con una configuración inicial básica de parámetros:
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 ada.boost <- ada(as.factor(loan_status) ~ ., data = fcr_train_ADABoost, type = "real",
@@ -1608,7 +1560,7 @@ caret.ada
 
 ```
 
-Obtenemos una configuración óptima de los hiperparámetros del modelo en “iter” = 150, “maxdepth” = 3 y “nu” = 0.1.
+Se obtiene una configuración óptima de los hiperparámetros del modelo en “iter” = 150, “maxdepth” = 3 y “nu” = 0.1.
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 caret.ada
@@ -1620,7 +1572,7 @@ caret.ada$bestTune
 
 ```
 
-Con el modelo de base obtenemos un accuracy del 90% con los datos de train.
+Con el modelo de base se obtiene un accuracy del 90% con los datos de train.
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 get_best_result = function(caret_fit) {
@@ -1646,7 +1598,7 @@ fcr_train_ADABoost$y_pred2 <- ifelse(fcr_train_ADABoost$y_pred_probs2 > 0.5, 1, 
 # fcr_train_ADABoost$y_pred_probs2 fcr_train_ADABoost$y_pred2 fcr_train_ADABoost
 ```
 
-Reproducimos la matriz de confusión y las métricas de evaluación sobre el modelo final de ADABoost obtenido:
+Se reproduce la matriz de confusión y las métricas de evaluación sobre el modelo final de ADABoost obtenido:
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 cm_train_ada <- confusionMatrix(as.factor(fcr_train_ADABoost$y_pred2), as.factor(fcr_train_ADABoost$loan_status),
@@ -1687,7 +1639,7 @@ F1Score_modelo_ada_tune
 
 ```
 
-Reproducimos la curva ROC sobre el modelo final de ADABoost obtenido:
+Se reproduce la curva ROC sobre el modelo final de ADABoost obtenido:
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 roc_ada <- plot.roc(as.numeric(fcr_train_ADABoost$loan_status), as.numeric(fcr_train_ADABoost$y_pred_probs2),
@@ -1718,7 +1670,7 @@ modelLookup("xgbTree")
 
 ```
 
-Creamos el modelo de boosting con una configuración inicial dada de parámetros:
+Se crea el modelo de boosting con una configuración inicial dada de parámetros:
 
 ```{r, include=FALSE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 set.seed(2)
@@ -1730,7 +1682,7 @@ caret.xgb
 
 ```  
 
-Obtenemos una configuración óptima de los hiperparámetros del modelo en:
+Se obtiene una configuración óptima de los hiperparámetros del modelo en:
 
 ```{r, include=FALSE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 get_best_result = function(caret_fit) {
@@ -1765,7 +1717,7 @@ fcr_train_XGBoost$y_pred2 <- ifelse(fcr_train_XGBoost$y_pred_probs2 > 0.5, 1,
 # fcr_train_XGBoost$y_pred_probs2 fcr_train_XGBoost$y_pred2 fcr_train_XGBoost
 ```
 
-Reproducimos la matriz de confusión y las métricas de evaluación sobre el modelo final de XG Boost obtenido:
+Se reproduce la matriz de confusión y las métricas de evaluación sobre el modelo final de XG Boost obtenido:
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 cm_train_xgb <- confusionMatrix(as.factor(fcr_train_XGBoost$y_pred2), as.factor(fcr_train_XGBoost$loan_status),
@@ -1806,7 +1758,7 @@ F1Score_modelo_xgb_tune
 
 ```
 
-Reproducimos la curva ROC sobre el modelo final de XGBoost obtenido:
+Se reproduce la curva ROC sobre el modelo final de XGBoost obtenido:
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 roc_xgb <- plot.roc(as.numeric(fcr_train_XGBoost$loan_status), as.numeric(fcr_train_XGBoost$y_pred_probs2),
@@ -1896,7 +1848,7 @@ Con los datos obtenidos, el algoritmo que mejores resultados ha arrojado es el d
 
 ## 13.1. Cambios, modificaciones y transformaciones sobre el dataset de test
 
-Realizamos los cambios y modificaciones necesarias sobre el conjunto de datos de test, aplicados previamente sobre nuestro dataset de train:
+Se realizan los cambios y modificaciones necesarias sobre el conjunto de datos de test, aplicados previamente sobre nuestro dataset de train:
 
 * Ya se han realizado anteriormente la imputación de NAs del data set de test al avlor de la mediana de la variable de referencia.
 
@@ -1960,7 +1912,7 @@ F1Score_modelo_xgb_tune_test
 
 ```
 
-Comprobamos el área bajo la curva para el modelo de XG Boost en el conjunto de datos de test:
+Se comprueba el área bajo la curva para el modelo de XG Boost en el conjunto de datos de test:
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 roc_xgb_test <- plot.roc(as.numeric(fcr_test$loan_status), as.numeric(fcr_test$y_pred_probs2),
@@ -2017,7 +1969,7 @@ plot(perf.xgb2, add = TRUE, col = "grey", lwd = 2)
 
 ```
 
-Realizando la comprobación del modelo con los datos de test al final del análisis, se comprueba que es un modelo generalizables, robustos y con resultados relativamente similares tanto en train como en test, siendo esto un resultado final del trabajo positivo.
+Realizando la comprobación del modelo con los datos de test al final del análisis, se llega a la conclusión de que es un modelo generalizable, robusto y con resultados relativamente similares tanto en train como en test, siendo esto un resultado final del trabajo positivo.
 
 # *CONCLUSIONES*
 
