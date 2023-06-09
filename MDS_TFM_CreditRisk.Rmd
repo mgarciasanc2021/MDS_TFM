@@ -23,7 +23,7 @@ El trabajo a desarrollar consiste en el análisis de un dataset relativo a datos
 
 ## 1.1. Desarrollo, programación y control de versiones
 
-Se ha elegido para el desarrollo de una parte del trabajo el lenguaje de programación R (R version 4.2.2), cómo IDE de desarrollo RStudio (RStudio version 2022.12.0.353) y cómo herramienta de control de versiones GitHub (proyecto "/MDS_TFM" creado y vinculado al usuario Miguel_gs - "mgarciasanc2021"). 
+Se ha elegido para el desarrollo del trabajo el lenguaje de programación R (R version 4.2.2), cómo IDE de desarrollo RStudio (RStudio version 2022.12.0.353) y cómo herramienta de control de versiones GitHub (proyecto "/MDS_TFM" creado y vinculado al usuario Miguel_gs - "mgarciasanc2021"). 
 
 **Link del proyecto en GitHub:** 
 https://github.com/mgarciasanc2021/MDS_TFM
@@ -233,7 +233,7 @@ plot(fin_credrisk$person_age, fin_credrisk$person_emp_length)
 
 ```
 
-Vemos como hay algunos datos que si podemos considerar atípico. Hay dos registros con un historial laboral de la persona contratante del préstamo ("person_emp_length") de más de 120 años y 4 registros con una edad de la persona contratante del préstamo ("person_age") superior a 120 años. 
+Vemos como hay algunos datos que si podemos considerar atípico. Hay 2 registros con un historial laboral de la persona contratante del préstamo ("person_emp_length") de más de 120 años y 5 registros con una edad de la persona contratante del préstamo ("person_age") superior a 120 años. 
 
 ### 4.2.2. Tratamiento y eliminación de datos atípicos o outliers
 
@@ -266,7 +266,7 @@ plot(fin_credrisk$person_age, fin_credrisk$person_emp_length)
 
 # 5. Partición del conjunto de datos: data set training y data set test
 
-Una vez vista por encima la estructura general de los datos, se procede a dividir el conjunto de datos en dos para diferenciar los que se usarán de entrenamiento de los que usarán de test (viendo la cantidad de datos de la que disponemos, la distribución elegida ha sido: 20% test y 80% training). Además, se establece una semilla que guarde de forma permanente la división realizada para que la distribución de los datos sea siempre la misma y no sufra variaciones.
+Una vez vista por encima la estructura general de los datos, se procede a dividir el conjunto de datos en dos para diferenciar los que se usarán de entrenamiento de los que usarán de test (viendo la cantidad de datos de los que se dispone, la distribución elegida ha sido: 20% test y 80% training). Además, se establece una semilla que guarde de forma permanente la división realizada para que la distribución de los datos sea siempre la misma y no sufra variaciones.
 
 Se procede a guardar también la partición de datos de test para ser utilizada a futuro para la validación del modelo final. De aquí en adelante, se pasa a trabajar con la partición de training.
 
