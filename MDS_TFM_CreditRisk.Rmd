@@ -596,7 +596,7 @@ fcr_train %>%
 
 ## 6.4. Análisis de las variables categóricas
 
-Se realiza un análisis de las variables categóricas en relación con el resto de variables numéricas del dataset. Se trata de entender las características personales de los clientes de banca retail y su actividad creditica para tratar de sacar un cierto análisis preliminar.
+Se realiza un análisis de las variables categóricas en relación con el resto de variables numéricas del dataset. Se trata de entender las características personales de los clientes de banca retail y su actividad crediticia para tratar de sacar un cierto análisis preliminar.
 
 * **Variable cb_person_default_on_file en función de las variables loan_int_rate y person_income:**
 
@@ -623,7 +623,7 @@ ggExtra::ggMarginal(plot1, type = "boxplot")
 
 ```
 
-En base a este gráfico se puede sacar como conclusión que: existe un sesgo en la edad (el dateset tiene más registros de gente joven), existe un sesgo en los ingresos (el dataset no tiene bien balanceada la variable "person_income", estando está desequilibrada y siendo más frecuente los ingresos bajos) y parece que la gente con hipoteca tiene por lo general más ingresos que la gente que vive de alquiler.
+En base a este gráfico se puede sacar como conclusión que: existe un sesgo en la edad (el dataset tiene más registros de gente joven), existe un sesgo en los ingresos (el dataset no tiene bien balanceada la variable "person_income", estando está desequilibrada y siendo más frecuente los ingresos bajos) y parece que la gente con hipoteca tiene por lo general más ingresos que la gente que vive de alquiler.
 
 * **Variable loan_intent en función de las variables loan_amnt y loan_int_rate:**
 
@@ -636,7 +636,7 @@ ggExtra::ggMarginal(plot2, type = "boxplot")
 
 ```
 
-Este segundo gráfico obtenido, representa la relación entre el importe del préstamo solicitado y el tipo de interés aplicado. Aquí se puede ver que no hay una correlación clara entre las dos variables, por lo que se puede decir que no dependen la una de la otra. Además, parece que la intención de préstamo se distribuye por igual en la muestra, lo que significa que la intención no influye en absoluto en los tipos de interés ni en el importe del préstamo. En este caso, las distribuciones son gaussianas normales con un ligero sesgo.
+Este tercer gráfico obtenido, representa la relación entre el importe del préstamo solicitado y el tipo de interés aplicado. Aquí se puede ver que no hay una correlación clara entre las dos variables, por lo que se puede decir que no dependen la una de la otra. Además, parece que la intención del préstamo se distribuye por igual en la muestra, lo que significa que la intención no influye en absoluto en los tipos de interés ni en el importe del préstamo. En este caso, las distribuciones son gaussianas normales con un ligero sesgo.
 
 * **Variable loan_grade en función de las variables loan_amnt y person_income:**
 
@@ -649,7 +649,7 @@ ggExtra::ggMarginal(plot3, type = "boxplot")
 
 ```
 
-En este tercer gráfico obtenido, tampoco existe una relación clara entre los ingresos y el importe del préstamo. Al añadir diferentes colores para las calificaciones de los préstamos, observamos una pequeña tendencia a que las personas con ingresos bajos y con un préstamo elevado tengan una calificación crediticia más baja. Pero no se aprecia una relación clara.
+En este cuarto gráfico obtenido, tampoco existe una relación clara entre los ingresos y el importe del préstamo. Al añadir diferentes colores para las calificaciones de los préstamos, se observa una pequeña tendencia a que las personas con ingresos bajos y con un préstamo elevado tengan una calificación crediticia más baja. Pero no se aprecia una relación clara.
 
 * **Variable loan_grade en función de las variables person_age y loan_int_rate:**
 
@@ -662,7 +662,7 @@ ggExtra::ggMarginal(plot4, type = "boxplot")
 
 ```
 
-En este cuarto gráfico se muestra la relación entre la edad, el tipo de interés y el grado del préstamo. Aquí se puede ver claramente que la calificación del préstamo depende del tipo de interés, que divide el gráfico en varias secciones. Básicamente se puede apreciar que cuanto más alto es el tipo de interés, mayor es el riesgo percibido. Esto podría deberse al método de evaluación del grado de riesgo de las personas. Además, observamos que las personas mayores tienden a tener tipos de interés más bajos por término medio que los jóvenes.
+En este quinto gráfico se muestra la relación entre la edad, el tipo de interés y el grado del préstamo. Aquí se puede ver claramente que la calificación del préstamo depende del tipo de interés, que divide el gráfico en varias secciones. Básicamente se puede apreciar que cuanto más alto es el tipo de interés, mayor es el riesgo percibido. Esto podría deberse al método de evaluación del grado de riesgo de las personas. Además, se observa que las personas mayores tienden a tener tipos de interés más bajos por término medio que los jóvenes.
 
 ## 6.5. Análisis de la variable de interés
 
