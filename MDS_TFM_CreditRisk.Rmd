@@ -679,9 +679,9 @@ ggExtra::ggMarginal(plot5, type = "boxplot")
 
 ```
 
-En este gráfico se vuelve a considerar el nivel de los tipos de interés, en relación con la proporción entre el importe del préstamo y los ingresos. La forma de los puntos sugiere que no hay una relación clara entre estas dos variables, lo que significa que los tipos de interés no dependen en absoluto del porcentaje de ingresos del préstamo. Sin embargo, cuanto más nos acercamos a un ratio más alto, más bajos son los tipos de interés.
+En el siguiente gráfico se vuelve a considerar el nivel de los tipos de interés, en relación con la proporción entre el importe del préstamo y los ingresos. La forma de los puntos sugiere que no hay una relación clara entre estas dos variables, lo que significa que los tipos de interés del préstamo no dependen en absoluto del Porcentaje de lo que supone el préstamo sobre los ingresos del cliente. Sin embargo, cuanto más nos acercamos a un ratio más alto, más bajos son los tipos de interés.
 
-Si analizamos a las personas que han impagado (en rojo) y a las personas que no han impagado (en verde), podemos ver claramente niveles de umbral hacia el 12% para los tipos de interés, y 0,3 para la variable de ingresos porcentuales del préstamo. Esta zona podría considerarse menos arriesgada tanto para los prestamistas como para los prestatarios. Esto parece razonable, ya que unos tipos de interés más altos y una mayor relación ingresos/préstamo significa que es menos probable que la gente reembolse su deuda.Es decir, a mayor nivel de tipo de interés del préstamos y un mayor nivel de endeudamiento en relación a los ingresos, es más probable que un cliente de una entidad bancaria termine por impagar su deuda y entrar en default.
+Si se analiza a las personas que han impagado (en rojo) y a las personas que no han impagado (en verde), podemos ver claramente niveles de umbral hacia el 12% para los tipos de interés, y 0,3 para la variable de porcentaje de lo que supone el préstamo sobre los ingresos del cliente. Esta zona podría considerarse menos arriesgada tanto para los prestamistas como para los prestatarios. Este patrón parece razonable, ya que unos tipos de interés más altos y una mayor relación ingresos/préstamo significa que es menos probable que los clientes reembolsen su deuda. Es decir, a mayor nivel de tipo de interés del préstamo y un mayor nivel de endeudamiento en relación con los ingresos, es más probable que un cliente de una entidad bancaria termine por impagar su deuda y entrar en default.    
 
 * **Variable loan_status en función de la variable person_home_ownership:**
 
@@ -876,7 +876,7 @@ summary(modelo_glm)
 
 Como observamos, nos quedamos solo con las variables significativas que relamente afectan a “loan_status”, y creamos un nuevo modelo exclusivamente con ellas. De esta forma simplificamos el modelo, nos quedamos con las varibales realmente importantes para el modelo predictor y creamos el mejor modelo de regresión logística posible para nuestro conjunto de datos. En principio las variables "cb_person_cred_hist_length", "cb_person_default_on_file" y "person_age", no parecen ser estadisticamente significativas.
 
-Se podría también pensar en la exclusión del modelo, de la variable "loan_percent_income", ya que de forma lógica y como se oberva en las correlaciones, es una variable que viene calculada, relaciona y explicada con las variables "person_income" y "loan_amnt". Esto nos puede llegar a generar multicolinearidad y crear redundancia en los cálculos que hagamos para el modelo.
+Se podría también pensar en la exclusión del modelo, de la variable "loan_percent_income", ya que de forma lógica y como se oberva en las correlaciones, es una variable que viene calculada, relaciona y explicada con las variables "person_income" y "loan_amnt". Esto nos puede llegar a generar multicolinealidad y crear redundancia en los cálculos que hagamos para el modelo.
 
 Finalmente se establece el siguiente modelo definitivo:
 
@@ -1672,7 +1672,7 @@ modelLookup("xgbTree")
 
 Se crea el modelo de boosting con una configuración inicial dada de parámetros:
 
-```{r, include=FALSE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 set.seed(2)
 caret.xgb <- train(as.factor(loan_status) ~ ., 
                    method = "xgbTree", 
@@ -1682,9 +1682,12 @@ caret.xgb
 
 ```  
 
+
 Se obtiene una configuración óptima de los hiperparámetros del modelo en:
 
-```{r, include=FALSE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+
 get_best_result = function(caret_fit) {
     best = which(rownames(caret_fit$results) == rownames(caret_fit$bestTune))
     best_result = caret_fit$results[best, ]
@@ -1696,12 +1699,16 @@ get_best_result(caret.xgb)
 
 ```  
 
+
 Se analiza la relevancia de cada variable en el modelo:
 
-```{r, include=FALSE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+
 varImp(caret.xgb)
 
 ```  
+
 
 Evaluación del rendimiento predictivo del modelo XG Boost presentado con las datos de train (metrica de evaluación utilizada de referencia: “Accuracy”, "Recall", "Precision", "F1" y "ROC", y punto de corte utilizado: 0.5):
 
@@ -1850,7 +1857,7 @@ Con los datos obtenidos, el algoritmo que mejores resultados ha arrojado es el d
 
 Se realizan los cambios y modificaciones necesarias sobre el conjunto de datos de test, aplicados previamente sobre nuestro dataset de train:
 
-* Ya se han realizado anteriormente la imputación de NAs del data set de test al avlor de la mediana de la variable de referencia.
+* Ya se han realizado anteriormente la imputación de NAs del data set de test al valor de la mediana de la variable de referencia.
 
 * Se ha optado finalmente en el trabajo por no tranformar ninguna variable a logaritmos, por lo que en el data set de test no habría que realizar nada al respecto.
 
@@ -1970,25 +1977,3 @@ plot(perf.xgb2, add = TRUE, col = "grey", lwd = 2)
 ```
 
 Realizando la comprobación del modelo con los datos de test al final del análisis, se llega a la conclusión de que es un modelo generalizable, robusto y con resultados relativamente similares tanto en train como en test, siendo esto un resultado final del trabajo positivo.
-
-# *CONCLUSIONES*
-
-# 14. Conclusiones generales del estudio
-
-* **Métrica de evaluación y punto de corte:**
-
-
-
-* **Ajuste de Hiperparámetros y Validación cruzada (Tuning y Cross Validation):**
-
-
-
-* **Comparativa entre modelos:**
-
-
-
-* **Resultados finales del análisis:**
-
-
-
-
