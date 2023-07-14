@@ -1,13 +1,14 @@
 ---
-title: "ANEXO: Riesgo de crédito - Análisis, desarrollo y código"
+title: "TFM: Riesgo de crédito - Análisis, desarrollo y código"
 author: "Miguel García Sánchez"
 date: "`r Sys.Date()`"
-output: pdf_document
-#html_document:
- # code_folding: hide
-  #toc: yes
-  #toc_float: TRUE
-  #toc_depth: 3 
+#output: pdf_document
+output:
+html_document:
+  code_folding: hide
+  toc: yes
+  toc_float: TRUE
+  toc_depth: 3 
 ---
 
 ```{r setup, include=FALSE}
@@ -598,7 +599,7 @@ fcr_train %>%
 
 Se realiza un análisis de las variables categóricas en relación con el resto de variables numéricas del dataset. Se trata de entender las características personales de los clientes de banca retail y su actividad crediticia para tratar de sacar un cierto análisis preliminar.
 
-* **Variable cb_person_default_on_file en función de las variables loan_int_rate y person_income:**
+* **Variable cb_person_default_on_file en función de las variables loan_int_rate y loan_percent_income:**
 
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 plot1 <- ggplot(fcr_train, aes(loan_int_rate, loan_percent_income, col=cb_person_default_on_file)) +
@@ -1389,6 +1390,8 @@ varImpPlot(rf)
 
 ```
 
+Como se puede observar, en el caso del modelo de Random Forest, las variables que mayor relavancia parecen tener en la definición de la capacidad predictora del mismo son "loan_percent_income", "loan_grade", "person_home_ownership", "person_income" y "loan_intent".
+
 ## 9.1. RANDOM FOREST - Cross Validation, Hiperparámetros y Evaluación del modelo
 
 Se trata de aplicar Cross Validation sobre el modelo de random forest y realizar una selección de hiperparámetros (se busca tener un modelo robusto, generalizable y comparable con el resto para la posterior selección del mejor):
@@ -1702,13 +1705,21 @@ get_best_result(caret.xgb)
 
 Se analiza la relevancia de cada variable en el modelo:
 
-
 ```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
 
 varImp(caret.xgb)
 
 ```  
 
+```{r, include=TRUE, message=FALSE, warning = FALSE,tidy=TRUE, tidy.opts=list(width.cutoff=60)}
+
+RocImp_xgb <- varImp(caret.xgb, scale = FALSE)
+
+plot(RocImp_xgb)
+
+```  
+
+Como se puede observar, para el modelo de XGBoost las variables que mayor relevancia tienen a la hora de crear el algoritmo para la predicción del riesgo de impago son "loan_percent_income", "person_income", "loan_int_rate", "person_home_ownership" en el caso de "Rent" o alquiler, y "loan_grade" en caso de clientes y operaciones con Scoring "D".
 
 Evaluación del rendimiento predictivo del modelo XG Boost presentado con las datos de train (metrica de evaluación utilizada de referencia: “Accuracy”, "Recall", "Precision", "F1" y "ROC", y punto de corte utilizado: 0.5):
 
